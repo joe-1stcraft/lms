@@ -101,15 +101,21 @@
 			</div>
 		</div>
 		<div v-else-if="!quizSubmission.data">
-			<div v-if="skippedQuestions.length" class="mb-4 flex flex-wrap gap-2">
-				<Button
-					v-for="num in sortedSkippedQuestions"
-					:key="num"
-					size="xs"
-					@click="goToQuestion(num)"
+			<div v-if="activeQuestion" class="mb-4 flex flex-wrap gap-2">
+				<button
+					v-for="(question, index) in questions"
+					:key="index"
+					@click="goToQuestion(index + 1)"
+					class="w-7 h-7 rounded-full border text-sm flex items-center justify-center"
+					:class="[
+						answeredQuestions.includes(index + 1)
+							? 'bg-ink-green-2 text-white border-ink-green-2'
+							: 'bg-surface-gray-3 text-ink-gray-9',
+						activeQuestion == index + 1 ? 'ring-2 ring-ink-blue-3' : '',
+					]"
 				>
-					{{ num }}
-				</Button>
+					{{ index + 1 }}
+				</button>
 			</div>
 			<div v-for="(question, qtidx) in questions">
 				<div
@@ -248,18 +254,17 @@
 								v-if="!showCheckButton && activeQuestion != questions.length"
 								@click="nextQuestion()"
 							>
-								<span>
-									{{ __('Next') }}
-								</span>
+								<span>{{ __('Next') }}</span>
 							</Button>
 							<Button
-								v-else-if="!showCheckButton"
+								v-if="
+									!showCheckButton &&
+									(allAnswered || activeQuestion == questions.length)
+								"
 								:disabled="skippedQuestions.length"
 								@click="submitQuiz()"
 							>
-								<span>
-									{{ __('Submit') }}
-								</span>
+								<span>{{ __('Submit') }}</span>
 							</Button>
 						</div>
 					</div>
@@ -360,8 +365,9 @@ let timerInterval = null
 let startTime = null
 const timeTaken = ref(0)
 const skippedQuestions = reactive([])
-const sortedSkippedQuestions = computed(() =>
-	[...skippedQuestions].sort((a, b) => a - b),
+const answeredQuestions = reactive([])
+const allAnswered = computed(
+	() => answeredQuestions.length === questions.length,
 )
 
 const props = defineProps({
@@ -546,6 +552,8 @@ const startQuiz = () => {
 	localStorage.removeItem(quiz.data.title)
 	startTime = Date.now()
 	if (quiz.data.duration) startTimer()
+	skippedQuestions.length = 0
+	answeredQuestions.length = 0
 }
 
 const markAnswer = (index) => {
@@ -554,6 +562,11 @@ const markAnswer = (index) => {
 	selectedOptions[index - 1] = selectedOptions[index - 1] ? 0 : 1
 	if (selectedOptions.some((opt) => opt)) {
 		removeFromSkipped(activeQuestion.value)
+		if (!answeredQuestions.includes(activeQuestion.value))
+			answeredQuestions.push(activeQuestion.value)
+	} else {
+		const idx = answeredQuestions.indexOf(activeQuestion.value)
+		if (idx !== -1) answeredQuestions.splice(idx, 1)
 	}
 }
 
@@ -580,8 +593,11 @@ const loadSavedAnswer = () => {
 	if (!saved) return
 	if (saved.type == 'Choices' && saved.selected) {
 		selectedOptions.splice(0, selectedOptions.length, ...saved.selected)
+		if (saved.selected.some((opt) => opt))
+			answeredQuestions.push(activeQuestion.value)
 	} else if (saved.type == 'User Input') {
 		possibleAnswer.value = saved.answer
+		if (saved.answer) answeredQuestions.push(activeQuestion.value)
 	}
 }
 
@@ -594,6 +610,8 @@ const skipQuestion = () => {
 	if (!skippedQuestions.includes(activeQuestion.value)) {
 		skippedQuestions.push(activeQuestion.value)
 	}
+	const idx = answeredQuestions.indexOf(activeQuestion.value)
+	if (idx !== -1) answeredQuestions.splice(idx, 1)
 	resetQuestion()
 }
 
@@ -606,7 +624,14 @@ const goToQuestion = (num) => {
 }
 
 watch(possibleAnswer, (val) => {
-	if (val) removeFromSkipped(activeQuestion.value)
+	if (val) {
+		removeFromSkipped(activeQuestion.value)
+		if (!answeredQuestions.includes(activeQuestion.value))
+			answeredQuestions.push(activeQuestion.value)
+	} else {
+		const idx = answeredQuestions.indexOf(activeQuestion.value)
+		if (idx !== -1) answeredQuestions.splice(idx, 1)
+	}
 })
 
 const checkAnswer = () => {
@@ -738,6 +763,8 @@ const resetQuiz = () => {
 	setupTimer()
 	startTime = null
 	timeTaken.value = 0
+	skippedQuestions.length = 0
+	answeredQuestions.length = 0
 }
 
 const getInstructions = (question) => {

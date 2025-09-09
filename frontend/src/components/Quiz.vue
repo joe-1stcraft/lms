@@ -14,21 +14,21 @@
 			<div v-if="quiz.data?.duration" class="leading-5">
 				{{
 					__(
-						'Please ensure that you complete all the questions in {0} minutes.'
+						'Please ensure that you complete all the questions in {0} minutes.',
 					).format(quiz.data.duration)
 				}}
 			</div>
 			<div v-if="quiz.data?.duration" class="leading-5">
 				{{
 					__(
-						'If you fail to do so, the quiz will be automatically submitted when the timer ends.'
+						'If you fail to do so, the quiz will be automatically submitted when the timer ends.',
 					)
 				}}
 			</div>
 			<div v-if="quiz.data.passing_percentage" class="leading-relaxed">
 				{{
 					__(
-						'You will have to get {0}% correct answers in order to pass the quiz.'
+						'You will have to get {0}% correct answers in order to pass the quiz.',
 					).format(quiz.data.passing_percentage)
 				}}
 			</div>
@@ -37,17 +37,17 @@
 					__('You can attempt this quiz {0}.').format(
 						quiz.data.max_attempts == 1
 							? '1 time'
-							: `${quiz.data.max_attempts} times`
+							: `${quiz.data.max_attempts} times`,
 					)
 				}}
 			</div>
 			<div v-if="quiz.data.enable_negative_marking" class="leading-5">
 				{{
 					__(
-						'If you answer incorrectly, {0} {1} will be deducted from your score for each incorrect answer.'
+						'If you answer incorrectly, {0} {1} will be deducted from your score for each incorrect answer.',
 					).format(
 						quiz.data.marks_to_cut,
-						quiz.data.marks_to_cut == 1 ? 'mark' : 'marks'
+						quiz.data.marks_to_cut == 1 ? 'mark' : 'marks',
 					)
 				}}
 			</div>
@@ -94,13 +94,29 @@
 				>
 					{{
 						__(
-							'You have already exceeded the maximum number of attempts allowed for this quiz.'
+							'You have already exceeded the maximum number of attempts allowed for this quiz.',
 						)
 					}}
 				</div>
 			</div>
 		</div>
 		<div v-else-if="!quizSubmission.data">
+			<div v-if="activeQuestion" class="mb-4 flex flex-wrap gap-2">
+				<button
+					v-for="(question, index) in questions"
+					:key="index"
+					@click="goToQuestion(index + 1)"
+					class="w-7 h-7 rounded-full border text-sm flex items-center justify-center"
+					:class="[
+						answeredQuestions.includes(index + 1)
+							? 'bg-ink-green-2 border-ink-green-2 text-ink-gray-9'
+							: 'bg-surface-gray-3 text-ink-gray-9',
+						activeQuestion == index + 1 ? 'ring-2 ring-ink-blue-3' : '',
+					]"
+				>
+					{{ index + 1 }}
+				</button>
+			</div>
 			<div v-for="(question, qtidx) in questions">
 				<div
 					v-if="qtidx == activeQuestion - 1 && questionDetails.data"
@@ -129,23 +145,23 @@
 							v-if="questionDetails.data[`option_${index}`]"
 							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600"
 						>
-                                                       <input
-                                                               v-if="!showAnswers.length && !questionDetails.data.multiple"
-                                                               type="radio"
-                                                               :name="encodeURIComponent(questionDetails.data.question)"
-                                                               class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
-                                                               :checked="selectedOptions[index - 1]"
-                                                               @change="markAnswer(index)"
-                                                       />
+							<input
+								v-if="!showAnswers.length && !questionDetails.data.multiple"
+								type="radio"
+								:name="encodeURIComponent(questionDetails.data.question)"
+								class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
+								:checked="selectedOptions[index - 1]"
+								@change="markAnswer(index)"
+							/>
 
-                                                       <input
-                                                               v-else-if="!showAnswers.length && questionDetails.data.multiple"
-                                                               type="checkbox"
-                                                               :name="encodeURIComponent(questionDetails.data.question)"
-                                                               class="w-3.5 h-3.5 text-ink-gray-9 rounded-sm focus:ring-outline-gray-modals"
-                                                               :checked="selectedOptions[index - 1]"
-                                                               @change="markAnswer(index)"
-                                                       />
+							<input
+								v-else-if="!showAnswers.length && questionDetails.data.multiple"
+								type="checkbox"
+								:name="encodeURIComponent(questionDetails.data.question)"
+								class="w-3.5 h-3.5 text-ink-gray-9 rounded-sm focus:ring-outline-gray-modals"
+								:checked="selectedOptions[index - 1]"
+								@change="markAnswer(index)"
+							/>
 							<div
 								v-else-if="quiz.data.show_answers"
 								v-for="(answer, idx) in showAnswers"
@@ -210,45 +226,48 @@
 							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 						/>
 					</div>
-                                       <div class="flex items-center justify-between mt-4">
-                                               <div class="text-sm text-ink-gray-5">
-                                                       {{
-                                                               __('Question {0} of {1}').format(
-                                                                       activeQuestion,
-                                                                       questions.length
-                                                               )
-                                                       }}
-                                               </div>
-                                               <div class="flex space-x-2">
-                                                       <Button
-                                                               v-if="showCheckButton"
-                                                               @click="checkAnswer()"
-                                                       >
-                                                               <span>
-                                                                       {{ __('Check') }}
-                                                               </span>
-                                                       </Button>
-                                                       <Button
-                                                               v-if="activeQuestion > 1"
-                                                               @click="previousQuestion()"
-                                                       >
-                                                               <span>{{ __('Previous') }}</span>
-                                                       </Button>
-                                                       <Button
-                                                               v-if="!showCheckButton && activeQuestion != questions.length"
-                                                               @click="nextQuestion()"
-                                                       >
-                                                               <span>
-                                                                       {{ __('Next') }}
-                                                               </span>
-                                                       </Button>
-                                                       <Button v-else-if="!showCheckButton" @click="submitQuiz()">
-                                                               <span>
-                                                                       {{ __('Submit') }}
-                                                               </span>
-                                                       </Button>
-                                               </div>
-                                       </div>
+					<div class="flex items-center justify-between mt-4">
+						<div class="text-sm text-ink-gray-5">
+							{{
+								__('Question {0} of {1}').format(
+									activeQuestion,
+									questions.length,
+								)
+							}}
+						</div>
+						<div class="flex space-x-2">
+							<Button
+								v-if="activeQuestion != questions.length && !isAnswered"
+								@click="skipQuestion()"
+							>
+								<span>{{ __('Skip') }}</span>
+							</Button>
+							<Button v-if="showCheckButton" @click="checkAnswer()">
+								<span>
+									{{ __('Check') }}
+								</span>
+							</Button>
+							<Button v-if="activeQuestion > 1" @click="previousQuestion()">
+								<span>{{ __('Previous') }}</span>
+							</Button>
+							<Button
+								v-if="!showCheckButton && activeQuestion != questions.length"
+								@click="nextQuestion()"
+							>
+								<span>{{ __('Next') }}</span>
+							</Button>
+							<Button
+								v-if="
+									!showCheckButton &&
+									(allAnswered || activeQuestion == questions.length)
+								"
+								:disabled="skippedQuestions.length"
+								@click="submitQuiz()"
+							>
+								<span>{{ __('Submit') }}</span>
+							</Button>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -262,18 +281,18 @@
 			>
 				{{
 					__(
-						"Your submission has been successfully saved. The instructor will review and grade it shortly, and you'll be notified of your final result."
+						"Your submission has been successfully saved. The instructor will review and grade it shortly, and you'll be notified of your final result.",
 					)
 				}}
 			</div>
 			<div v-else>
 				{{
 					__(
-						'You got {0}% correct answers with a score of {1} out of {2}'
+						'You got {0}% correct answers with a score of {1} out of {2}',
 					).format(
 						Math.ceil(quizSubmission.data.percentage),
 						quizSubmission.data.score,
-						quizSubmission.data.score_out_of
+						quizSubmission.data.score_out_of,
 					)
 				}}
 			</div>
@@ -345,6 +364,11 @@ const timer = ref(0)
 let timerInterval = null
 let startTime = null
 const timeTaken = ref(0)
+const skippedQuestions = reactive([])
+const answeredQuestions = reactive([])
+const allAnswered = computed(
+	() => answeredQuestions.length === questions.length,
+)
 
 const props = defineProps({
 	quizName: {
@@ -420,15 +444,15 @@ const formatTimer = (seconds) => {
 }
 
 const timerProgress = computed(() => {
-        return (timer.value / (quiz.data.duration * 60)) * 100
+	return (timer.value / (quiz.data.duration * 60)) * 100
 })
 
 const showCheckButton = computed(() => {
-        return (
-                quiz.data?.show_answers &&
-                !showAnswers.length &&
-                questionDetails.data?.type != 'Open Ended'
-        )
+	return (
+		quiz.data?.show_answers &&
+		!showAnswers.length &&
+		questionDetails.data?.type != 'Open Ended'
+	)
 })
 
 const shuffleArray = (array) => {
@@ -477,18 +501,21 @@ watch(
 			attempts.reload()
 			resetQuiz()
 		}
-	}
+	},
 )
 
 const quizSubmission = createResource({
-        url: 'lms.lms.doctype.lms_quiz.lms_quiz.quiz_summary',
-        makeParams(values) {
-                return {
-                        quiz: quiz.data.name,
-                        results: localStorage.getItem(quiz.data.title),
-                        time_taken: timeTaken.value,
-                }
-        },
+	url: 'lms.lms.doctype.lms_quiz.lms_quiz.quiz_summary',
+	makeParams(values) {
+		const stored = JSON.parse(
+			localStorage.getItem(quiz.data.title) || '[]',
+		).filter(Boolean)
+		return {
+			quiz: quiz.data.name,
+			results: JSON.stringify(stored),
+			time_taken: timeTaken.value,
+		}
+	},
 })
 
 const questionDetails = createResource({
@@ -498,6 +525,13 @@ const questionDetails = createResource({
 			question: currentQuestion.value,
 		}
 	},
+})
+
+const isAnswered = computed(() => {
+	if (questionDetails.data?.type == 'Choices') {
+		return selectedOptions.some((opt) => opt)
+	}
+	return !!possibleAnswer.value
 })
 
 watch(activeQuestion, (value) => {
@@ -513,25 +547,36 @@ watch(
 		if (newName) {
 			quiz.reload()
 		}
-	}
+	},
 )
 
 const startQuiz = () => {
-        activeQuestion.value = 1
-        localStorage.removeItem(quiz.data.title)
-        startTime = Date.now()
-        if (quiz.data.duration) startTimer()
+	activeQuestion.value = 1
+	localStorage.removeItem(quiz.data.title)
+	startTime = Date.now()
+	if (quiz.data.duration) startTimer()
+	skippedQuestions.length = 0
+	answeredQuestions.length = 0
 }
 
 const markAnswer = (index) => {
 	if (!questionDetails.data.multiple)
 		selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
 	selectedOptions[index - 1] = selectedOptions[index - 1] ? 0 : 1
+	if (selectedOptions.some((opt) => opt)) {
+		removeFromSkipped(activeQuestion.value)
+		if (!answeredQuestions.includes(activeQuestion.value))
+			answeredQuestions.push(activeQuestion.value)
+	} else {
+		const idx = answeredQuestions.indexOf(activeQuestion.value)
+		if (idx !== -1) answeredQuestions.splice(idx, 1)
+	}
+	addToLocalStorage()
 }
 
 const getAnswers = () => {
-        let answers = []
-        const type = questionDetails.data.type
+	let answers = []
+	const type = questionDetails.data.type
 
 	if (type == 'Choices') {
 		selectedOptions.forEach((value, index) => {
@@ -542,22 +587,69 @@ const getAnswers = () => {
 		answers.push(possibleAnswer.value)
 	}
 
-        return answers
+	return answers
 }
 
 const loadSavedAnswer = () => {
-        const quizData = JSON.parse(localStorage.getItem(quiz.data.title))
-        if (!quizData) return
-        const saved = quizData[activeQuestion.value - 1]
-        if (!saved) return
-        if (saved.type == 'Choices' && saved.selected) {
-                selectedOptions.splice(0, selectedOptions.length, ...saved.selected)
-        } else if (saved.type == 'User Input') {
-                possibleAnswer.value = saved.answer
-        }
+	const quizData = JSON.parse(localStorage.getItem(quiz.data.title))
+	if (!quizData) return
+	const saved = quizData[activeQuestion.value - 1]
+	if (!saved) return
+	if (saved.type == 'Choices' && saved.selected) {
+		selectedOptions.splice(0, selectedOptions.length, ...saved.selected)
+		if (saved.selected.some((opt) => opt))
+			answeredQuestions.push(activeQuestion.value)
+	} else if (saved.type == 'User Input') {
+		possibleAnswer.value = saved.answer
+		if (saved.answer) answeredQuestions.push(activeQuestion.value)
+	}
 }
 
-const checkAnswer = () => {
+const removeFromSkipped = (num) => {
+	const idx = skippedQuestions.indexOf(num)
+	if (idx !== -1) skippedQuestions.splice(idx, 1)
+}
+
+const loadQuestion = (num) => {
+	activeQuestion.value = num
+	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
+	showAnswers.length = 0
+	possibleAnswer.value = null
+	loadSavedAnswer()
+}
+
+const skipQuestion = () => {
+	if (!skippedQuestions.includes(activeQuestion.value)) {
+		skippedQuestions.push(activeQuestion.value)
+	}
+	const idx = answeredQuestions.indexOf(activeQuestion.value)
+	if (idx !== -1) answeredQuestions.splice(idx, 1)
+	resetQuestion()
+}
+
+const goToQuestion = (num) => {
+	const move = () => loadQuestion(num)
+	if (getAnswers().length && questionDetails.data?.type != 'Open Ended') {
+		checkAnswer(move)
+	} else {
+		addToLocalStorage()
+		move()
+	}
+}
+
+watch(possibleAnswer, (val) => {
+	if (val) {
+		removeFromSkipped(activeQuestion.value)
+		if (!answeredQuestions.includes(activeQuestion.value))
+			answeredQuestions.push(activeQuestion.value)
+	} else {
+		const idx = answeredQuestions.indexOf(activeQuestion.value)
+		if (idx !== -1) answeredQuestions.splice(idx, 1)
+	}
+	addToLocalStorage()
+})
+
+const checkAnswer = (onDone) => {
 	let answers = getAnswers()
 	if (!answers.length) {
 		toast.warning(__('Please select an option'))
@@ -588,72 +680,62 @@ const checkAnswer = () => {
 				showAnswers.push(data)
 			}
 			addToLocalStorage()
-			if (!quiz.data.show_answers) {
-				resetQuestion()
-			}
+			if (onDone) onDone()
 		},
 	})
 }
 
 const addToLocalStorage = () => {
-        let quizData = JSON.parse(localStorage.getItem(quiz.data.title)) || []
-        let questionData = {
-                question_name: currentQuestion.value,
-                type: questionDetails.data.type,
-                answer: getAnswers().join(),
-                selected: [...selectedOptions],
-                is_correct: showAnswers.filter((answer) => {
-                        return answer != undefined
-                }),
-        }
-        quizData[activeQuestion.value - 1] = questionData
-        localStorage.setItem(quiz.data.title, JSON.stringify(quizData))
+	let quizData = JSON.parse(localStorage.getItem(quiz.data.title)) || []
+	let questionData = {
+		question_name: currentQuestion.value,
+		type: questionDetails.data.type,
+		answer: getAnswers().join(),
+		selected: [...selectedOptions],
+		is_correct: showAnswers.filter((answer) => {
+			return answer != undefined
+		}),
+	}
+	quizData[activeQuestion.value - 1] = questionData
+	localStorage.setItem(quiz.data.title, JSON.stringify(quizData))
 }
 
 const previousQuestion = () => {
-        if (activeQuestion.value <= 1) return
-        activeQuestion.value = activeQuestion.value - 1
-        selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-        showAnswers.length = 0
-        possibleAnswer.value = null
-        loadSavedAnswer()
+	if (activeQuestion.value <= 1) return
+	goToQuestion(activeQuestion.value - 1)
 }
 
 const nextQuestion = () => {
-        if (!quiz.data.show_answers && questionDetails.data?.type != 'Open Ended') {
-                checkAnswer()
-        } else {
-                if (questionDetails.data?.type == 'Open Ended') addToLocalStorage()
-                resetQuestion()
-        }
+	goToQuestion(activeQuestion.value + 1)
 }
 
 const resetQuestion = () => {
-        if (activeQuestion.value == quiz.data.questions.length) return
-        activeQuestion.value = activeQuestion.value + 1
-        selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-        showAnswers.length = 0
-        possibleAnswer.value = null
-        loadSavedAnswer()
+	if (activeQuestion.value == quiz.data.questions.length) return
+	loadQuestion(activeQuestion.value + 1)
 }
 
 const submitQuiz = () => {
-	if (!quiz.data.show_answers) {
-		if (questionDetails.data.type == 'Open Ended') addToLocalStorage()
-		else checkAnswer()
-		setTimeout(() => {
-			createSubmission()
-		}, 500)
+	if (skippedQuestions.length) {
+		toast.warning(__('Please answer all skipped questions'))
 		return
 	}
-	createSubmission()
+	if (questionDetails.data.type == 'Open Ended') {
+		addToLocalStorage()
+		createSubmission()
+		return
+	}
+	if (getAnswers().length) {
+		checkAnswer(() => createSubmission())
+	} else {
+		createSubmission()
+	}
 }
 
 const createSubmission = () => {
-        timeTaken.value = startTime ? (Date.now() - startTime) / 1000 : 0
-        quizSubmission.submit(
-                {},
-                {
+	timeTaken.value = startTime ? (Date.now() - startTime) / 1000 : 0
+	quizSubmission.submit(
+		{},
+		{
 			onSuccess(data) {
 				markLessonProgress()
 				if (quiz.data && quiz.data.max_attempts) attempts.reload()
@@ -669,19 +751,21 @@ const createSubmission = () => {
 					}, 3000)
 				}
 			},
-		}
+		},
 	)
 }
 
 const resetQuiz = () => {
-        activeQuestion.value = 0
-        selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-        showAnswers.length = 0
-        quizSubmission.reset()
-        populateQuestions()
-        setupTimer()
-        startTime = null
-        timeTaken.value = 0
+	activeQuestion.value = 0
+	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
+	showAnswers.length = 0
+	quizSubmission.reset()
+	populateQuestions()
+	setupTimer()
+	startTime = null
+	timeTaken.value = 0
+	skippedQuestions.length = 0
+	answeredQuestions.length = 0
 }
 
 const getInstructions = (question) => {

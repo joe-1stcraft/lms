@@ -109,7 +109,7 @@
 					class="w-7 h-7 rounded-full border text-sm flex items-center justify-center"
 					:class="[
 						answeredQuestions.includes(index + 1)
-							? 'bg-ink-green-2 text-white border-ink-green-2'
+							? 'bg-ink-green-2 border-ink-green-2 text-ink-gray-9'
 							: 'bg-surface-gray-3 text-ink-gray-9',
 						activeQuestion == index + 1 ? 'ring-2 ring-ink-blue-3' : '',
 					]"
@@ -507,9 +507,12 @@ watch(
 const quizSubmission = createResource({
 	url: 'lms.lms.doctype.lms_quiz.lms_quiz.quiz_summary',
 	makeParams(values) {
+		const stored = JSON.parse(
+			localStorage.getItem(quiz.data.title) || '[]',
+		).filter(Boolean)
 		return {
 			quiz: quiz.data.name,
-			results: localStorage.getItem(quiz.data.title),
+			results: JSON.stringify(stored),
 			time_taken: timeTaken.value,
 		}
 	},
@@ -568,6 +571,7 @@ const markAnswer = (index) => {
 		const idx = answeredQuestions.indexOf(activeQuestion.value)
 		if (idx !== -1) answeredQuestions.splice(idx, 1)
 	}
+	addToLocalStorage()
 }
 
 const getAnswers = () => {
@@ -616,6 +620,7 @@ const skipQuestion = () => {
 }
 
 const goToQuestion = (num) => {
+	addToLocalStorage()
 	activeQuestion.value = num
 	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
 	showAnswers.length = 0
@@ -632,6 +637,7 @@ watch(possibleAnswer, (val) => {
 		const idx = answeredQuestions.indexOf(activeQuestion.value)
 		if (idx !== -1) answeredQuestions.splice(idx, 1)
 	}
+	addToLocalStorage()
 })
 
 const checkAnswer = () => {

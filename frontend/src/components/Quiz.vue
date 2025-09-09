@@ -129,21 +129,23 @@
 							v-if="questionDetails.data[`option_${index}`]"
 							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600"
 						>
-							<input
-								v-if="!showAnswers.length && !questionDetails.data.multiple"
-								type="radio"
-								:name="encodeURIComponent(questionDetails.data.question)"
-								class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
-								@change="markAnswer(index)"
-							/>
+                                                       <input
+                                                               v-if="!showAnswers.length && !questionDetails.data.multiple"
+                                                               type="radio"
+                                                               :name="encodeURIComponent(questionDetails.data.question)"
+                                                               class="w-3.5 h-3.5 text-ink-gray-9 focus:ring-outline-gray-modals"
+                                                               :checked="selectedOptions[index - 1]"
+                                                               @change="markAnswer(index)"
+                                                       />
 
-							<input
-								v-else-if="!showAnswers.length && questionDetails.data.multiple"
-								type="checkbox"
-								:name="encodeURIComponent(questionDetails.data.question)"
-								class="w-3.5 h-3.5 text-ink-gray-9 rounded-sm focus:ring-outline-gray-modals"
-								@change="markAnswer(index)"
-							/>
+                                                       <input
+                                                               v-else-if="!showAnswers.length && questionDetails.data.multiple"
+                                                               type="checkbox"
+                                                               :name="encodeURIComponent(questionDetails.data.question)"
+                                                               class="w-3.5 h-3.5 text-ink-gray-9 rounded-sm focus:ring-outline-gray-modals"
+                                                               :checked="selectedOptions[index - 1]"
+                                                               @change="markAnswer(index)"
+                                                       />
 							<div
 								v-else-if="quiz.data.show_answers"
 								v-for="(answer, idx) in showAnswers"
@@ -208,41 +210,45 @@
 							editorClass="prose-sm max-w-none border-b border-x bg-surface-gray-2 rounded-b-md py-1 px-2 min-h-[7rem]"
 						/>
 					</div>
-					<div class="flex items-center justify-between mt-4">
-						<div class="text-sm text-ink-gray-5">
-							{{
-								__('Question {0} of {1}').format(
-									activeQuestion,
-									questions.length
-								)
-							}}
-						</div>
-						<Button
-							v-if="
-								quiz.data.show_answers &&
-								!showAnswers.length &&
-								questionDetails.data.type != 'Open Ended'
-							"
-							@click="checkAnswer()"
-						>
-							<span>
-								{{ __('Check') }}
-							</span>
-						</Button>
-						<Button
-							v-else-if="activeQuestion != questions.length"
-							@click="nextQuestion()"
-						>
-							<span>
-								{{ __('Next') }}
-							</span>
-						</Button>
-						<Button v-else @click="submitQuiz()">
-							<span>
-								{{ __('Submit') }}
-							</span>
-						</Button>
-					</div>
+                                       <div class="flex items-center justify-between mt-4">
+                                               <div class="text-sm text-ink-gray-5">
+                                                       {{
+                                                               __('Question {0} of {1}').format(
+                                                                       activeQuestion,
+                                                                       questions.length
+                                                               )
+                                                       }}
+                                               </div>
+                                               <div class="flex space-x-2">
+                                                       <Button
+                                                               v-if="showCheckButton"
+                                                               @click="checkAnswer()"
+                                                       >
+                                                               <span>
+                                                                       {{ __('Check') }}
+                                                               </span>
+                                                       </Button>
+                                                       <Button
+                                                               v-if="activeQuestion > 1"
+                                                               @click="previousQuestion()"
+                                                       >
+                                                               <span>{{ __('Previous') }}</span>
+                                                       </Button>
+                                                       <Button
+                                                               v-if="!showCheckButton && activeQuestion != questions.length"
+                                                               @click="nextQuestion()"
+                                                       >
+                                                               <span>
+                                                                       {{ __('Next') }}
+                                                               </span>
+                                                       </Button>
+                                                       <Button v-else-if="!showCheckButton" @click="submitQuiz()">
+                                                               <span>
+                                                                       {{ __('Submit') }}
+                                                               </span>
+                                                       </Button>
+                                               </div>
+                                       </div>
 				</div>
 			</div>
 		</div>
@@ -412,7 +418,15 @@ const formatTimer = (seconds) => {
 }
 
 const timerProgress = computed(() => {
-	return (timer.value / (quiz.data.duration * 60)) * 100
+        return (timer.value / (quiz.data.duration * 60)) * 100
+})
+
+const showCheckButton = computed(() => {
+        return (
+                quiz.data?.show_answers &&
+                !showAnswers.length &&
+                questionDetails.data?.type != 'Open Ended'
+        )
 })
 
 const shuffleArray = (array) => {
@@ -512,8 +526,8 @@ const markAnswer = (index) => {
 }
 
 const getAnswers = () => {
-	let answers = []
-	const type = questionDetails.data.type
+        let answers = []
+        const type = questionDetails.data.type
 
 	if (type == 'Choices') {
 		selectedOptions.forEach((value, index) => {
@@ -524,7 +538,19 @@ const getAnswers = () => {
 		answers.push(possibleAnswer.value)
 	}
 
-	return answers
+        return answers
+}
+
+const loadSavedAnswer = () => {
+        const quizData = JSON.parse(localStorage.getItem(quiz.data.title))
+        if (!quizData) return
+        const saved = quizData[activeQuestion.value - 1]
+        if (!saved) return
+        if (saved.type == 'Choices' && saved.selected) {
+                selectedOptions.splice(0, selectedOptions.length, ...saved.selected)
+        } else if (saved.type == 'User Input') {
+                possibleAnswer.value = saved.answer
+        }
 }
 
 const checkAnswer = () => {
@@ -566,33 +592,45 @@ const checkAnswer = () => {
 }
 
 const addToLocalStorage = () => {
-	let quizData = JSON.parse(localStorage.getItem(quiz.data.title))
-	let questionData = {
-		question_name: currentQuestion.value,
-		answer: getAnswers().join(),
-		is_correct: showAnswers.filter((answer) => {
-			return answer != undefined
-		}),
-	}
-	quizData ? quizData.push(questionData) : (quizData = [questionData])
-	localStorage.setItem(quiz.data.title, JSON.stringify(quizData))
+        let quizData = JSON.parse(localStorage.getItem(quiz.data.title)) || []
+        let questionData = {
+                question_name: currentQuestion.value,
+                type: questionDetails.data.type,
+                answer: getAnswers().join(),
+                selected: [...selectedOptions],
+                is_correct: showAnswers.filter((answer) => {
+                        return answer != undefined
+                }),
+        }
+        quizData[activeQuestion.value - 1] = questionData
+        localStorage.setItem(quiz.data.title, JSON.stringify(quizData))
+}
+
+const previousQuestion = () => {
+        if (activeQuestion.value <= 1) return
+        activeQuestion.value = activeQuestion.value - 1
+        selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
+        showAnswers.length = 0
+        possibleAnswer.value = null
+        loadSavedAnswer()
 }
 
 const nextQuestion = () => {
-	if (!quiz.data.show_answers && questionDetails.data?.type != 'Open Ended') {
-		checkAnswer()
-	} else {
-		if (questionDetails.data?.type == 'Open Ended') addToLocalStorage()
-		resetQuestion()
-	}
+        if (!quiz.data.show_answers && questionDetails.data?.type != 'Open Ended') {
+                checkAnswer()
+        } else {
+                if (questionDetails.data?.type == 'Open Ended') addToLocalStorage()
+                resetQuestion()
+        }
 }
 
 const resetQuestion = () => {
-	if (activeQuestion.value == quiz.data.questions.length) return
-	activeQuestion.value = activeQuestion.value + 1
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	showAnswers.length = 0
-	possibleAnswer.value = null
+        if (activeQuestion.value == quiz.data.questions.length) return
+        activeQuestion.value = activeQuestion.value + 1
+        selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
+        showAnswers.length = 0
+        possibleAnswer.value = null
+        loadSavedAnswer()
 }
 
 const submitQuiz = () => {

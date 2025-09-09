@@ -99,8 +99,8 @@ def set_total_marks(questions):
 
 @frappe.whitelist()
 def quiz_summary(quiz, results, time_taken=None):
-        results = results and json.loads(results)
-        percentage = 0
+	results = results and json.loads(results)
+	percentage = 0
 
 	quiz_details = frappe.db.get_value(
 		"LMS Quiz",
@@ -124,9 +124,9 @@ def quiz_summary(quiz, results, time_taken=None):
 
 	score_out_of = quiz_details.total_marks
 	percentage = (score / score_out_of) * 100 if score_out_of else 0
-        submission = create_submission(
-                quiz, results, score_out_of, quiz_details.passing_percentage, time_taken
-        )
+	submission = create_submission(
+		quiz, results, score_out_of, quiz_details.passing_percentage, time_taken
+	)
 
 	save_progress_after_quiz(quiz_details, percentage)
 
@@ -231,24 +231,23 @@ def get_corrupted_image_msg():
 
 
 def create_submission(quiz, results, score_out_of, passing_percentage, time_taken=None):
-        submission = frappe.new_doc("LMS Quiz Submission")
-        # Score and percentage are calculated by the controller function
-        submission.update(
-                {
-                        "doctype": "LMS Quiz Submission",
-                        "quiz": quiz,
-                        "result": results,
-                        "score": 0,
-                        "score_out_of": score_out_of,
-                        "member": frappe.session.user,
-                        "percentage": 0,
-                        "passing_percentage": passing_percentage,
-                        "time_taken": time_taken,
-                }
-        )
-        submission.save(ignore_permissions=True)
-        return submission
-
+	submission = frappe.new_doc("LMS Quiz Submission")
+	# Score and percentage are calculated by the controller function
+	submission.update(
+		{
+			"doctype": "LMS Quiz Submission",
+			"quiz": quiz,
+			"result": results,
+			"score": 0,
+			"score_out_of": score_out_of,
+			"member": frappe.session.user,
+			"percentage": 0,
+			"passing_percentage": passing_percentage,
+			"time_taken": time_taken,
+		}
+	)
+	submission.save(ignore_permissions=True)
+	return submission
 
 def save_progress_after_quiz(quiz_details, percentage):
 	if percentage >= quiz_details.passing_percentage and quiz_details.lesson and quiz_details.course:

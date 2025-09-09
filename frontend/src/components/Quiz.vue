@@ -635,7 +635,6 @@ const goToQuestion = (num) => {
 		addToLocalStorage()
 		move()
 	}
-}
 
 watch(possibleAnswer, (val) => {
 	if (val) {
@@ -702,6 +701,7 @@ const addToLocalStorage = () => {
 
 const previousQuestion = () => {
 	if (activeQuestion.value <= 1) return
+
 	goToQuestion(activeQuestion.value - 1)
 }
 

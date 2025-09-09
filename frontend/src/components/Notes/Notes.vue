@@ -7,7 +7,7 @@
 		:placeholder="__('Make notes for quick revision. Press / for menu.')"
 		@change="(val: string) => updateNoteText(val)"
 		:editable="true"
-		editorClass="prose prose-sm min-h-[200px] max-w-none"
+		editorClass="prose prose-sm min-h-[120px] max-w-none"
 	/>
 </template>
 <script setup lang="ts">
@@ -38,7 +38,7 @@ watch(
 	() => {
 		updateCurrentNote()
 		blockQuotesClick()
-	}
+	},
 )
 
 const updateCurrentNote = () => {
@@ -89,7 +89,7 @@ const createNote = () => {
 			onError(err: any) {
 				console.error('Error creating note:', err)
 			},
-		}
+		},
 	)
 }
 
@@ -109,7 +109,7 @@ const updateNote = () => {
 			onError(err: any) {
 				console.error('Error updating note:', err)
 			},
-		}
+		},
 	)
 }
 </script>

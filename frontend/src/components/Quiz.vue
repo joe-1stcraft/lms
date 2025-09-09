@@ -560,8 +560,12 @@ watch(
 )
 
 const startQuiz = () => {
-	activeQuestion.value = 1
 	localStorage.removeItem(quiz.data.title)
+	activeQuestion.value = 1
+	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
+	showAnswers.length = 0
+	possibleAnswer.value = null
+
 	startTime = Date.now()
 	if (quiz.data.duration) startTimer()
 	skippedQuestions.length = 0
@@ -765,9 +769,11 @@ const createSubmission = () => {
 }
 
 const resetQuiz = () => {
+	localStorage.removeItem(quiz.data.title)
 	activeQuestion.value = 0
 	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
 	showAnswers.length = 0
+	possibleAnswer.value = null
 	quizSubmission.reset()
 	populateQuestions()
 	setupTimer()

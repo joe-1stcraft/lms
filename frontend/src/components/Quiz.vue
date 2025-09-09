@@ -565,6 +565,7 @@ const startQuiz = () => {
 	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
 	showAnswers.length = 0
 	possibleAnswer.value = null
+
 	startTime = Date.now()
 	if (quiz.data.duration) startTimer()
 	skippedQuestions.length = 0

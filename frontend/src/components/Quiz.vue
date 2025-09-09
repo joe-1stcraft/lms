@@ -343,6 +343,8 @@ let questions = reactive([])
 const possibleAnswer = ref(null)
 const timer = ref(0)
 let timerInterval = null
+let startTime = null
+const timeTaken = ref(0)
 
 const props = defineProps({
 	quizName: {
@@ -479,13 +481,14 @@ watch(
 )
 
 const quizSubmission = createResource({
-	url: 'lms.lms.doctype.lms_quiz.lms_quiz.quiz_summary',
-	makeParams(values) {
-		return {
-			quiz: quiz.data.name,
-			results: localStorage.getItem(quiz.data.title),
-		}
-	},
+        url: 'lms.lms.doctype.lms_quiz.lms_quiz.quiz_summary',
+        makeParams(values) {
+                return {
+                        quiz: quiz.data.name,
+                        results: localStorage.getItem(quiz.data.title),
+                        time_taken: timeTaken.value,
+                }
+        },
 })
 
 const questionDetails = createResource({
@@ -514,9 +517,10 @@ watch(
 )
 
 const startQuiz = () => {
-	activeQuestion.value = 1
-	localStorage.removeItem(quiz.data.title)
-	if (quiz.data.duration) startTimer()
+        activeQuestion.value = 1
+        localStorage.removeItem(quiz.data.title)
+        startTime = Date.now()
+        if (quiz.data.duration) startTimer()
 }
 
 const markAnswer = (index) => {
@@ -646,9 +650,10 @@ const submitQuiz = () => {
 }
 
 const createSubmission = () => {
-	quizSubmission.submit(
-		{},
-		{
+        timeTaken.value = startTime ? (Date.now() - startTime) / 1000 : 0
+        quizSubmission.submit(
+                {},
+                {
 			onSuccess(data) {
 				markLessonProgress()
 				if (quiz.data && quiz.data.max_attempts) attempts.reload()
@@ -669,12 +674,14 @@ const createSubmission = () => {
 }
 
 const resetQuiz = () => {
-	activeQuestion.value = 0
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	showAnswers.length = 0
-	quizSubmission.reset()
-	populateQuestions()
-	setupTimer()
+        activeQuestion.value = 0
+        selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
+        showAnswers.length = 0
+        quizSubmission.reset()
+        populateQuestions()
+        setupTimer()
+        startTime = null
+        timeTaken.value = 0
 }
 
 const getInstructions = (question) => {

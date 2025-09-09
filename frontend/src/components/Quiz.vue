@@ -610,6 +610,14 @@ const removeFromSkipped = (num) => {
 	if (idx !== -1) skippedQuestions.splice(idx, 1)
 }
 
+const loadQuestion = (num) => {
+	activeQuestion.value = num
+	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
+	showAnswers.length = 0
+	possibleAnswer.value = null
+	loadSavedAnswer()
+}
+
 const skipQuestion = () => {
 	if (!skippedQuestions.includes(activeQuestion.value)) {
 		skippedQuestions.push(activeQuestion.value)
@@ -620,13 +628,13 @@ const skipQuestion = () => {
 }
 
 const goToQuestion = (num) => {
-	addToLocalStorage()
-	activeQuestion.value = num
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	showAnswers.length = 0
-	possibleAnswer.value = null
-	loadSavedAnswer()
-}
+	const move = () => loadQuestion(num)
+	if (getAnswers().length && questionDetails.data?.type != 'Open Ended') {
+		checkAnswer(move)
+	} else {
+		addToLocalStorage()
+		move()
+	}
 
 watch(possibleAnswer, (val) => {
 	if (val) {
@@ -640,7 +648,7 @@ watch(possibleAnswer, (val) => {
 	addToLocalStorage()
 })
 
-const checkAnswer = () => {
+const checkAnswer = (onDone) => {
 	let answers = getAnswers()
 	if (!answers.length) {
 		toast.warning(__('Please select an option'))
@@ -671,9 +679,7 @@ const checkAnswer = () => {
 				showAnswers.push(data)
 			}
 			addToLocalStorage()
-			if (!quiz.data.show_answers) {
-				resetQuestion()
-			}
+			if (onDone) onDone()
 		},
 	})
 }
@@ -695,29 +701,17 @@ const addToLocalStorage = () => {
 
 const previousQuestion = () => {
 	if (activeQuestion.value <= 1) return
-	activeQuestion.value = activeQuestion.value - 1
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	showAnswers.length = 0
-	possibleAnswer.value = null
-	loadSavedAnswer()
+
+	goToQuestion(activeQuestion.value - 1)
 }
 
 const nextQuestion = () => {
-	if (!quiz.data.show_answers && questionDetails.data?.type != 'Open Ended') {
-		checkAnswer()
-	} else {
-		if (questionDetails.data?.type == 'Open Ended') addToLocalStorage()
-		resetQuestion()
-	}
+	goToQuestion(activeQuestion.value + 1)
 }
 
 const resetQuestion = () => {
 	if (activeQuestion.value == quiz.data.questions.length) return
-	activeQuestion.value = activeQuestion.value + 1
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	showAnswers.length = 0
-	possibleAnswer.value = null
-	loadSavedAnswer()
+	loadQuestion(activeQuestion.value + 1)
 }
 
 const submitQuiz = () => {
@@ -725,15 +719,16 @@ const submitQuiz = () => {
 		toast.warning(__('Please answer all skipped questions'))
 		return
 	}
-	if (!quiz.data.show_answers) {
-		if (questionDetails.data.type == 'Open Ended') addToLocalStorage()
-		else checkAnswer()
-		setTimeout(() => {
-			createSubmission()
-		}, 500)
+	if (questionDetails.data.type == 'Open Ended') {
+		addToLocalStorage()
+		createSubmission()
 		return
 	}
-	createSubmission()
+	if (getAnswers().length) {
+		checkAnswer(() => createSubmission())
+	} else {
+		createSubmission()
+	}
 }
 
 const createSubmission = () => {

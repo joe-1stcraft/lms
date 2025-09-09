@@ -101,6 +101,16 @@
 			</div>
 		</div>
 		<div v-else-if="!quizSubmission.data">
+			<div v-if="skippedQuestions.length" class="mb-4 flex flex-wrap gap-2">
+				<button
+					v-for="num in skippedQuestions"
+					:key="num"
+					@click="goToQuestion(num)"
+					class="w-7 h-7 rounded-full border text-sm flex items-center justify-center border-ink-red-3 bg-surface-gray-3 text-ink-gray-9"
+				>
+					{{ num }}
+				</button>
+			</div>
 			<div v-if="activeQuestion" class="mb-4 flex flex-wrap gap-2">
 				<button
 					v-for="(question, index) in questions"
@@ -350,7 +360,6 @@ import {
 import { ref, watch, reactive, inject, computed } from 'vue'
 import { CheckCircle, XCircle, MinusCircle } from 'lucide-vue-next'
 import { timeAgo } from '@/utils'
-import { useRouter } from 'vue-router'
 import ProgressBar from '@/components/ProgressBar.vue'
 
 const user = inject('$user')
@@ -635,6 +644,7 @@ const goToQuestion = (num) => {
 		addToLocalStorage()
 		move()
 	}
+}
 
 watch(possibleAnswer, (val) => {
 	if (val) {
@@ -701,7 +711,6 @@ const addToLocalStorage = () => {
 
 const previousQuestion = () => {
 	if (activeQuestion.value <= 1) return
-
 	goToQuestion(activeQuestion.value - 1)
 }
 

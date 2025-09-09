@@ -249,7 +249,6 @@ def create_submission(quiz, results, score_out_of, passing_percentage, time_take
 	submission.save(ignore_permissions=True)
 	return submission
 
-
 def save_progress_after_quiz(quiz_details, percentage):
 	if percentage >= quiz_details.passing_percentage and quiz_details.lesson and quiz_details.course:
 		save_progress(quiz_details.lesson, quiz_details.course)

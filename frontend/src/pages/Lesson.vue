@@ -20,7 +20,7 @@
 				<CertificationLinks :courseName="courseName" />
 			</div>
 		</header>
-		<div class="grid md:grid-cols-[70%,30%] h-screen">
+                <div class="grid md:grid-cols-[80%,20%] min-h-screen">
 			<div v-if="lesson.data.no_preview" class="border-r">
 				<div class="shadow rounded-md w-3/4 mt-10 mx-auto text-center p-4">
 					<div class="flex items-center justify-center mt-4 space-x-2">
@@ -67,12 +67,12 @@
 					'overflow-y-auto': zenModeEnabled,
 				}"
 			>
-				<div
-					class="border-r pt-5 pb-10 h-full"
-					:class="{
-						'w-full md:w-3/5 mx-auto border-none !pt-10': zenModeEnabled,
-					}"
-				>
+                                <div
+                                        class="border-r p-5 min-h-screen"
+                                        :class="{
+                                                'w-full md:w-3/5 mx-auto border-none !pt-10': zenModeEnabled,
+                                        }"
+                                >
 					<div class="px-5">
 						<div
 							class="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center justify-between"

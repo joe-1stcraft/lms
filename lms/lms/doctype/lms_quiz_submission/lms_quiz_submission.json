@@ -17,6 +17,7 @@
   "column_break_gkip",
   "percentage",
   "passing_percentage",
+  "time_taken",
   "section_break_6",
   "result"
  ],
@@ -104,6 +105,12 @@
    "non_negative": 1,
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fieldname": "time_taken",
+   "fieldtype": "Float",
+   "label": "Time Taken",
+   "read_only": 1
   },
   {
    "fetch_from": "quiz.title",

@@ -295,26 +295,59 @@
 					)
 				}}
 			</div>
-			<div v-else>
-				{{
-					__(
-						'You got {0}% correct answers with a score of {1} out of {2}',
-					).format(
-						Math.ceil(quizSubmission.data.percentage),
-						quizSubmission.data.score,
-						quizSubmission.data.score_out_of,
-					)
-				}}
-			</div>
-			<div class="space-x-2">
-				<Button
-					@click="resetQuiz()"
-					class="mt-2"
-					v-if="
-						!quiz.data.max_attempts ||
-						attempts?.data.length < quiz.data.max_attempts
-					"
-				>
+                        <div v-else>
+                                {{
+                                        __(
+                                                'You got {0}% correct answers with a score of {1} out of {2}',
+                                        ).format(
+                                                Math.ceil(quizSubmission.data.percentage),
+                                                quizSubmission.data.score,
+                                                quizSubmission.data.score_out_of,
+                                        )
+                                }}
+                        </div>
+                        <div
+                                v-if="quizSubmission.data.stats"
+                                class="mt-4 border-t pt-4 text-sm grid grid-cols-2 gap-y-1 text-left"
+                        >
+                                <div class="text-ink-gray-7">{{ __('Number of Students') }}</div>
+                                <div class="text-right">
+                                        {{ quizSubmission.data.stats.custom_n_total }}
+                                </div>
+                                <div class="text-ink-gray-7">{{ __('Total Attempts') }}</div>
+                                <div class="text-right">
+                                        {{ quizSubmission.data.stats.custom_total_attempts }}
+                                </div>
+                                <div class="text-ink-gray-7">{{ __('Overall P-value (Difficulty)') }}</div>
+                                <div class="text-right">
+                                        {{ quizSubmission.data.stats.custom_p_value }}
+                                </div>
+                                <div class="text-ink-gray-7">{{ __('Pass Rate (%)') }}</div>
+                                <div class="text-right">
+                                        {{ quizSubmission.data.stats.custom_pass_rate }}
+                                </div>
+                                <div class="text-ink-gray-7">{{ __('Mean Score') }}</div>
+                                <div class="text-right">
+                                        {{ quizSubmission.data.stats.custom_mean_score }}
+                                </div>
+                                <div class="text-ink-gray-7">{{ __('Score Standard Deviation') }}</div>
+                                <div class="text-right">
+                                        {{ quizSubmission.data.stats.custom_sd_score }}
+                                </div>
+                                <div class="text-ink-gray-7">{{ __('Last Stat Update') }}</div>
+                                <div class="text-right">
+                                        {{ quizSubmission.data.stats.custom_last_stat_update }}
+                                </div>
+                        </div>
+                        <div class="space-x-2">
+                                <Button
+                                        @click="resetQuiz()"
+                                        class="mt-2"
+                                        v-if="
+                                                !quiz.data.max_attempts ||
+                                                attempts?.data.length < quiz.data.max_attempts
+                                        "
+                                >
 					<span>
 						{{ __('Try Again') }}
 					</span>

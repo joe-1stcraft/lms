@@ -337,7 +337,7 @@
 				<Dropdown :options="printOptions">
 					<template v-slot="{ open }">
 						<Button class="mt-2" variant="outline">
-							{{ __('Print') }}
+							{{ __('View Report') }}
 						</Button>
 					</template>
 				</Dropdown>
@@ -584,13 +584,13 @@ const quizSubmission = createResource({
 
 const openPrintView = () => {
 	window.open(
-		`/printview?doctype=LMS%20Quiz%20Submission&name=${quizSubmission.data.name}`,
+		`/printview?doctype=LMS%20Quiz%20Submission&name=${quizSubmission.data.submission}`,
 		'_blank',
 	)
 }
 const downloadPdf = () => {
 	window.open(
-		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Quiz+Submission&name=${quizSubmission.data.name}`,
+		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Quiz+Submission&name=${quizSubmission.data.submission}`,
 		'_blank',
 	)
 }
@@ -602,7 +602,7 @@ const emailResource = createResource({
 	url: 'lms.lms.api.send_quiz_submission_email',
 	makeParams(values) {
 		return {
-			submission: quizSubmission.data.name,
+			submission: quizSubmission.data.submission,
 			recipient: values.email,
 		}
 	},
@@ -622,7 +622,7 @@ const sendEmail = (close) => {
 	)
 }
 const printOptions = [
-	{ label: __('View Print'), onClick: openPrintView },
+	{ label: __('Open Report'), onClick: openPrintView },
 	{ label: __('Download PDF'), onClick: downloadPdf },
 	{ label: __('Send Email'), onClick: openEmailDialog },
 ]

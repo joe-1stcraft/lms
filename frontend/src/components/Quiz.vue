@@ -310,14 +310,6 @@
                                 v-if="quizSubmission.data.stats"
                                 class="mt-4 border-t pt-4 text-sm grid grid-cols-2 gap-y-1 text-left"
                         >
-                                <div class="text-ink-gray-7">{{ __('Number of Students') }}</div>
-                                <div class="text-right">
-                                        {{ quizSubmission.data.stats.custom_n_total }}
-                                </div>
-                                <div class="text-ink-gray-7">{{ __('Total Attempts') }}</div>
-                                <div class="text-right">
-                                        {{ quizSubmission.data.stats.custom_total_attempts }}
-                                </div>
                                 <div class="text-ink-gray-7">{{ __('Overall P-value (Difficulty)') }}</div>
                                 <div class="text-right">
                                         {{ quizSubmission.data.stats.custom_p_value }}

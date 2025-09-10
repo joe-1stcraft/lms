@@ -221,7 +221,7 @@ const students = createResource({
                         Object.keys(row.assessments).forEach((title) => {
                                 const info = row.assessments[title]
                                 if (!info.submission) {
-                                        if (info.type === 'LMS Assignment') {
+                                        if (info.type?.includes('Assignment')) {
                                                 assignments.push(title)
                                         } else if (info.type === 'LMS Quiz') {
                                                 quizzes.push(title)

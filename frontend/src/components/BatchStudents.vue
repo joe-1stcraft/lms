@@ -62,17 +62,25 @@
 	</div>
 
 	<div>
-		<div class="flex items-center justify-between mb-4">
-			<div class="text-ink-gray-7 font-medium">
-				{{ __('Students') }}
-			</div>
-			<Button v-if="!readOnlyMode" @click="openStudentModal()">
-				<template #prefix>
-					<Plus class="h-4 w-4" />
-				</template>
-				{{ __('Add') }}
-			</Button>
-		</div>
+                <div class="flex items-center justify-between mb-4">
+                        <div class="text-ink-gray-7 font-medium">
+                                {{ __('Students') }}
+                        </div>
+                        <div class="flex gap-2">
+                                <Button v-if="students.data?.length" @click="exportToCSV">
+                                        {{ __('Export Excel') }}
+                                </Button>
+                                <Button v-if="students.data?.length" @click="exportToPDF">
+                                        {{ __('Export PDF') }}
+                                </Button>
+                                <Button v-if="!readOnlyMode" @click="openStudentModal()">
+                                        <template #prefix>
+                                                <Plus class="h-4 w-4" />
+                                        </template>
+                                        {{ __('Add') }}
+                                </Button>
+                        </div>
+                </div>
 
 		<div v-if="students.data?.length">
 			<ListView
@@ -123,20 +131,21 @@
 										/>
 									</div>
 								</template>
-								<div
-									v-if="column.key == 'progress'"
-									class="flex items-center space-x-4 w-full"
-								>
-									<ProgressBar :progress="row[column.key]" size="sm" />
-									<div class="text-xs">{{ row[column.key] }}%</div>
-								</div>
-								<div v-else>
-									{{ row[column.key] }}
-								</div>
-							</ListRowItem>
-						</template>
-					</ListRow>
-				</ListRows>
+                                                                <div
+                                                                        :class="{
+                                                                                'text-green-600':
+                                                                                        (column.key === 'assignments_todo' &&
+                                                                                                row.assignments_complete) ||
+                                                                                        (column.key === 'quizzes_todo' &&
+                                                                                                row.quizzes_complete),
+                                                                        }"
+                                                                >
+                                                                        {{ row[column.key] }}
+                                                                </div>
+                                                        </ListRowItem>
+                                                </template>
+                                        </ListRow>
+                                </ListRows>
 				<ListSelectBanner>
 					<template #actions="{ unselectAll, selections }">
 						<div class="flex gap-2">
@@ -185,19 +194,12 @@ import {
 	toast,
 } from 'frappe-ui'
 import {
-	BookOpen,
-	GraduationCap,
-	Plus,
-	ShieldCheck,
-	Trash2,
-	User,
+        Plus,
+        Trash2,
 } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import StudentModal from '@/components/Modals/StudentModal.vue'
-import ProgressBar from '@/components/ProgressBar.vue'
 import BatchStudentProgress from '@/components/Modals/BatchStudentProgress.vue'
-import ApexChart from 'vue3-apexcharts'
-import { theme } from '@/utils/theme'
 
 const showStudentModal = ref(false)
 const showStudentProgressModal = ref(false)
@@ -220,36 +222,77 @@ const students = createResource({
 		batch: props.batch?.data?.name,
 	},
 	auto: true,
-	onSuccess(data) {
-		chartData.value = getChartData()
-		showProgressChart.value =
-			data.length &&
-			(props.batch?.data?.courses?.length || assessmentCount.value)
-	},
+        onSuccess(data) {
+                data.forEach((row) => {
+                        const assignments = []
+                        const quizzes = []
+                        Object.keys(row.assessments).forEach((title) => {
+                                const info = row.assessments[title]
+                                const type = (info.type || '').toLowerCase()
+                                if (!info.submission) {
+                                        if (type.includes('assignment')) {
+                                                assignments.push(title)
+                                        } else if (type.includes('quiz')) {
+                                                quizzes.push(title)
+                                        }
+                                }
+                        })
+                        const hasAssignments = Object.values(row.assessments).some((i) =>
+                                (i.type || '').toLowerCase().includes('assignment')
+                        )
+                        const hasQuizzes = Object.values(row.assessments).some((i) =>
+                                (i.type || '').toLowerCase().includes('quiz')
+                        )
+                        if (hasAssignments && assignments.length === 0) {
+                                row.assignments_todo = 'ส่งครบแล้ว'
+                                row.assignments_complete = true
+                        } else {
+                                row.assignments_todo = assignments.join(', ')
+                                row.assignments_complete = false
+                        }
+                        if (hasQuizzes && quizzes.length === 0) {
+                                row.quizzes_todo = 'ส่งครบแล้ว'
+                                row.quizzes_complete = true
+                        } else {
+                                row.quizzes_todo = quizzes.join(', ')
+                                row.quizzes_complete = false
+                        }
+                })
+                chartData.value = getChartData()
+                showProgressChart.value =
+                        data.length &&
+                        (props.batch?.data?.courses?.length || assessmentCount.value)
+        },
 })
 
 const getStudentColumns = () => {
-	let columns = [
-		{
-			label: 'Full Name',
-			key: 'full_name',
-			width: '20rem',
-			icon: 'user',
-		},
-		{
-			label: 'Progress',
-			key: 'progress',
-			width: '15rem',
-			icon: 'activity',
-		},
-		{
-			label: 'Last Active',
-			key: 'last_active',
-			width: '10rem',
-			align: 'center',
-			icon: 'clock',
-		},
-	]
+        let columns = [
+                {
+                        label: 'Full Name',
+                        key: 'full_name',
+                        width: '20rem',
+                        icon: 'user',
+                },
+                {
+                        label: 'Assignment To Do',
+                        key: 'assignments_todo',
+                        width: '15rem',
+                        icon: 'book',
+                },
+                {
+                        label: 'Quiz To Do',
+                        key: 'quizzes_todo',
+                        width: '15rem',
+                        icon: 'help-circle',
+                },
+                {
+                        label: 'Last Active',
+                        key: 'last_active',
+                        width: '10rem',
+                        align: 'center',
+                        icon: 'clock',
+                },
+        ]
 
 	return columns
 }
@@ -259,8 +302,48 @@ const openStudentModal = () => {
 }
 
 const openStudentProgressModal = (row) => {
-	showStudentProgressModal.value = true
-	selectedStudent.value = row
+        showStudentProgressModal.value = true
+        selectedStudent.value = row
+}
+
+const exportToCSV = () => {
+        if (!students.data?.length) return
+        const rows = [
+                ['Full Name', 'Assignments To Do', 'Quizzes To Do', 'Last Active'],
+        ]
+        students.data.forEach((row) => {
+                rows.push([
+                        row.full_name,
+                        row.assignments_todo || '',
+                        row.quizzes_todo || '',
+                        row.last_active || '',
+                ])
+        })
+        const csvContent = rows
+                .map((e) => e.map((v) => `"${v}"`).join(','))
+                .join('\n')
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.setAttribute('download', 'students.csv')
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+}
+
+const exportToPDF = () => {
+        if (!students.data?.length) return
+        let html =
+                '<html><head><title>Students</title></head><body><table border="1" style="border-collapse:collapse;width:100%"><tr><th>Full Name</th><th>Assignments To Do</th><th>Quizzes To Do</th><th>Last Active</th></tr>'
+        students.data.forEach((row) => {
+                html += `<tr><td>${row.full_name}</td><td>${row.assignments_todo || ''}</td><td>${row.quizzes_todo || ''}</td><td>${row.last_active || ''}</td></tr>`
+        })
+        html += '</table></body></html>'
+        const w = window.open('')
+        w.document.write(html)
+        w.document.close()
+        w.focus()
+        w.print()
 }
 
 const deleteStudents = createResource({
@@ -308,16 +391,16 @@ const getChartData = () => {
 }
 
 const countAssessments = (row, tasks) => {
-	Object.keys(row.assessments).forEach((assessment) => {
-		if (row.assessments[assessment].result === 'Pass') {
-			tasks.filter((task) => task.label === assessment).length
-				? tasks.filter((task) => task.label === assessment)[0].value++
-				: tasks.push({
-						value: 1,
-						label: assessment,
-				  })
-		}
-	})
+        Object.keys(row.assessments).forEach((assessment) => {
+                if (row.assessments[assessment].submission) {
+                        tasks.filter((task) => task.label === assessment).length
+                                ? tasks.filter((task) => task.label === assessment)[0].value++
+                                : tasks.push({
+                                                value: 1,
+                                                label: assessment,
+                                  })
+                }
+        })
 	return tasks
 }
 

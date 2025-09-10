@@ -1639,12 +1639,12 @@ def has_submitted_assessment(assessment, assessment_type, member=None):
 	if not member:
 		member = frappe.session.user
 
-	if assessment_type == "LMS Assignment":
+	if "Assignment" in assessment_type:
 		doctype = "LMS Assignment Submission"
 		docfield = "assignment"
 		fields = ["status"]
 		not_attempted = "Not Attempted"
-	elif assessment_type == "LMS Quiz":
+	elif "Quiz" in assessment_type:
 		doctype = "LMS Quiz Submission"
 		docfield = "quiz"
 		fields = ["percentage"]

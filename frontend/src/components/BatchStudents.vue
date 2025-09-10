@@ -131,7 +131,15 @@
 										/>
 									</div>
 								</template>
-                                                                <div>
+                                                                <div
+                                                                        :class="{
+                                                                                'text-green-600':
+                                                                                        (column.key === 'assignments_todo' &&
+                                                                                                row.assignments_complete) ||
+                                                                                        (column.key === 'quizzes_todo' &&
+                                                                                                row.quizzes_complete),
+                                                                        }"
+                                                                >
                                                                         {{ row[column.key] }}
                                                                 </div>
                                                         </ListRowItem>
@@ -223,13 +231,31 @@ const students = createResource({
                                 if (!info.submission) {
                                         if (info.type?.includes('Assignment')) {
                                                 assignments.push(title)
-                                        } else if (info.type === 'LMS Quiz') {
+                                        } else if (info.type?.includes('Quiz')) {
                                                 quizzes.push(title)
                                         }
                                 }
                         })
-                        row.assignments_todo = assignments.join(', ')
-                        row.quizzes_todo = quizzes.join(', ')
+                        const hasAssignments = Object.values(row.assessments).some((i) =>
+                                i.type?.includes('Assignment')
+                        )
+                        const hasQuizzes = Object.values(row.assessments).some((i) =>
+                                i.type?.includes('Quiz')
+                        )
+                        if (hasAssignments && assignments.length === 0) {
+                                row.assignments_todo = 'ส่งครบแล้ว'
+                                row.assignments_complete = true
+                        } else {
+                                row.assignments_todo = assignments.join(', ')
+                                row.assignments_complete = false
+                        }
+                        if (hasQuizzes && quizzes.length === 0) {
+                                row.quizzes_todo = 'ส่งครบแล้ว'
+                                row.quizzes_complete = true
+                        } else {
+                                row.quizzes_todo = quizzes.join(', ')
+                                row.quizzes_complete = false
+                        }
                 })
                 chartData.value = getChartData()
                 showProgressChart.value =

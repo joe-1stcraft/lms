@@ -1617,7 +1617,7 @@ def get_batch_students(batch):
 			)
 			detail.assessments[title] = assessment_info
 
-			if assessment_info.result == "Pass":
+			if assessment_info.submission:
 				assessments_completed += 1
 
 		detail.courses_completed = courses_completed
@@ -1681,6 +1681,8 @@ def has_submitted_assessment(assessment, assessment_type, member=None):
 			{
 				"status": not_attempted,
 				"result": "Failed",
+				"assessment": assessment,
+				"type": assessment_type,
 			}
 		)
 

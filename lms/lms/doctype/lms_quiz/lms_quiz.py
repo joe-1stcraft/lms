@@ -113,6 +113,13 @@ def quiz_summary(quiz, results, time_taken=None):
 			"course",
 			"enable_negative_marking",
 			"marks_to_cut",
+			"custom_n_total",
+			"custom_total_attempts",
+			"custom_p_value",
+			"custom_pass_rate",
+			"custom_mean_score",
+			"custom_sd_score",
+			"custom_last_stat_update",
 		],
 		as_dict=1,
 	)
@@ -130,6 +137,16 @@ def quiz_summary(quiz, results, time_taken=None):
 
 	save_progress_after_quiz(quiz_details, percentage)
 
+	stats = {
+		"custom_n_total": quiz_details.custom_n_total,
+		"custom_total_attempts": quiz_details.custom_total_attempts,
+		"custom_p_value": quiz_details.custom_p_value,
+		"custom_pass_rate": quiz_details.custom_pass_rate,
+		"custom_mean_score": quiz_details.custom_mean_score,
+		"custom_sd_score": quiz_details.custom_sd_score,
+		"custom_last_stat_update": quiz_details.custom_last_stat_update,
+	}
+
 	return {
 		"score": score,
 		"score_out_of": score_out_of,
@@ -137,6 +154,7 @@ def quiz_summary(quiz, results, time_taken=None):
 		"pass": percentage == quiz_details.passing_percentage,
 		"percentage": percentage,
 		"is_open_ended": is_open_ended,
+		"stats": stats,
 	}
 
 

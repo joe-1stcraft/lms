@@ -1611,7 +1611,11 @@ def get_batch_students(batch):
 
 		""" Iterate through assessments and track their progress """
 		for assessment in assessments:
-			title = frappe.db.get_value(assessment.assessment_type, assessment.assessment_name, "title")
+			title = frappe.db.get_value(
+				assessment.assessment_type,
+				assessment.assessment_name,
+				"title",
+			) or assessment.assessment_name
 			assessment_info = has_submitted_assessment(
 				assessment.assessment_name, assessment.assessment_type, student.member
 			)
@@ -1639,41 +1643,47 @@ def has_submitted_assessment(assessment, assessment_type, member=None):
 	if not member:
 		member = frappe.session.user
 
-	if "Assignment" in assessment_type:
+	assessment_type_str = (assessment_type or "").lower()
+	if "assignment" in assessment_type_str:
 		doctype = "LMS Assignment Submission"
 		docfield = "assignment"
-		fields = ["status"]
+		fields = ["status", "assignment_attachment", "answer"]
 		not_attempted = "Not Attempted"
-	elif "Quiz" in assessment_type:
+	elif "quiz" in assessment_type_str:
 		doctype = "LMS Quiz Submission"
 		docfield = "quiz"
 		fields = ["percentage"]
 		not_attempted = 0
 
-	filters = {}
-	filters[docfield] = assessment
-	filters["member"] = member
+	filters = {docfield: assessment, "member": member}
 
-	attempt = frappe.db.exists(doctype, filters)
+	attempt = frappe.db.get_value(doctype, filters, fields + ["name"], as_dict=1)
+
+	if attempt and doctype == "LMS Assignment Submission" and not (
+		attempt.assignment_attachment or attempt.answer
+	):
+		attempt = None
+
 	if attempt:
-		fields.append("name")
-		attempt_details = frappe.db.get_value(doctype, filters, fields, as_dict=1)
-		if assessment_type == "LMS Quiz":
+		if doctype == "LMS Quiz Submission":
 			result = "Failed"
-			passing_percentage = frappe.db.get_value("LMS Quiz", assessment, "passing_percentage")
-			if attempt_details.percentage >= passing_percentage:
+			passing_percentage = (
+				frappe.db.get_value("LMS Quiz", assessment, "passing_percentage")
+				or 0
+			)
+			if attempt.percentage >= passing_percentage:
 				result = "Pass"
+			status = attempt.percentage
 		else:
-			result = attempt_details.status
+			result = attempt.status
+			status = attempt.status
 		return frappe._dict(
 			{
-				"status": attempt_details.percentage
-				if assessment_type == "LMS Quiz"
-				else attempt_details.status,
+				"status": status,
 				"result": result,
 				"assessment": assessment,
 				"type": assessment_type,
-				"submission": attempt_details.name,
+				"submission": attempt.name,
 			}
 		)
 	else:

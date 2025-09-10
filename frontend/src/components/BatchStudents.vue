@@ -233,7 +233,6 @@ const students = createResource({
                                         if (type.includes('assignment')) {
                                                 assignments.push(title)
                                         } else if (type.includes('quiz')) {
-
                                                 quizzes.push(title)
                                         }
                                 }

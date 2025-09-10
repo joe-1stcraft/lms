@@ -1625,3 +1625,12 @@ def get_progress_distribution(progressList):
 	]
 
 	return distribution
+@frappe.whitelist()
+def send_quiz_submission_email(submission, recipient):
+    attachment = frappe.attach_print("LMS Quiz Submission", submission, file_name=submission)
+    frappe.sendmail(
+        recipients=[recipient],
+        subject=_("Quiz Submission"),
+        message=_("Please find attached your quiz submission."),
+        attachments=[attachment],
+    )

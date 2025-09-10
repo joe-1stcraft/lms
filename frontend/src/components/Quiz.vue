@@ -295,51 +295,60 @@
 					)
 				}}
 			</div>
-                        <div v-else>
-                                {{
-                                        __(
-                                                'You got {0}% correct answers with a score of {1} out of {2}',
-                                        ).format(
-                                                Math.ceil(quizSubmission.data.percentage),
-                                                quizSubmission.data.score,
-                                                quizSubmission.data.score_out_of,
-                                        )
-                                }}
-                        </div>
-                        <div
-                                v-if="quizSubmission.data.stats"
-                                class="mt-4 border-t pt-4 text-sm grid grid-cols-2 gap-y-1 text-left"
-                        >
-                                <div class="text-ink-gray-7">{{ __('Overall P-value (Difficulty)') }}</div>
-                                <div class="text-right">
-                                        {{ quizSubmission.data.stats.custom_p_value }}
-                                </div>
-                                <div class="text-ink-gray-7">{{ __('Pass Rate (%)') }}</div>
-                                <div class="text-right">
-                                        {{ quizSubmission.data.stats.custom_pass_rate }}
-                                </div>
-                                <div class="text-ink-gray-7">{{ __('Mean Score') }}</div>
-                                <div class="text-right">
-                                        {{ quizSubmission.data.stats.custom_mean_score }}
-                                </div>
-                                <div class="text-ink-gray-7">{{ __('Score Standard Deviation') }}</div>
-                                <div class="text-right">
-                                        {{ quizSubmission.data.stats.custom_sd_score }}
-                                </div>
-                                <div class="text-ink-gray-7">{{ __('Last Stat Update') }}</div>
-                                <div class="text-right">
-                                        {{ quizSubmission.data.stats.custom_last_stat_update }}
-                                </div>
-                        </div>
-                        <div class="space-x-2">
-                                <Button
-                                        @click="resetQuiz()"
-                                        class="mt-2"
-                                        v-if="
-                                                !quiz.data.max_attempts ||
-                                                attempts?.data.length < quiz.data.max_attempts
-                                        "
-                                >
+			<div v-else>
+				{{
+					__(
+						'You got {0}% correct answers with a score of {1} out of {2}',
+					).format(
+						Math.ceil(quizSubmission.data.percentage),
+						quizSubmission.data.score,
+						quizSubmission.data.score_out_of,
+					)
+				}}
+			</div>
+			<div
+				v-if="quizSubmission.data.stats"
+				class="mt-4 border-t pt-4 text-sm grid grid-cols-2 gap-y-1 text-left"
+			>
+				<div class="text-ink-gray-7">
+					{{ __('Overall P-value (Difficulty)') }}
+				</div>
+				<div class="text-right">
+					{{ quizSubmission.data.stats.custom_p_value }}
+				</div>
+				<div class="text-ink-gray-7">{{ __('Pass Rate (%)') }}</div>
+				<div class="text-right">
+					{{ quizSubmission.data.stats.custom_pass_rate }}
+				</div>
+				<div class="text-ink-gray-7">{{ __('Mean Score') }}</div>
+				<div class="text-right">
+					{{ quizSubmission.data.stats.custom_mean_score }}
+				</div>
+				<div class="text-ink-gray-7">{{ __('Score Standard Deviation') }}</div>
+				<div class="text-right">
+					{{ quizSubmission.data.stats.custom_sd_score }}
+				</div>
+				<div class="text-ink-gray-7">{{ __('Last Stat Update') }}</div>
+				<div class="text-right">
+					{{ quizSubmission.data.stats.custom_last_stat_update }}
+				</div>
+			</div>
+			<div class="space-x-2">
+				<Dropdown :options="printOptions">
+					<template v-slot="{ open }">
+						<Button class="mt-2" variant="outline">
+							{{ __('View Report') }}
+						</Button>
+					</template>
+				</Dropdown>
+				<Button
+					@click="resetQuiz()"
+					class="mt-2"
+					v-if="
+						!quiz.data.max_attempts ||
+						attempts?.data.length < quiz.data.max_attempts
+					"
+				>
 					<span>
 						{{ __('Try Again') }}
 					</span>
@@ -370,6 +379,23 @@
 			</ListView>
 		</div>
 	</div>
+	<Dialog
+		v-model="showEmailDialog"
+		:options="{
+			title: __('Send Email'),
+			actions: [
+				{
+					label: __('Send'),
+					variant: 'solid',
+					onClick: (close) => sendEmail(close),
+				},
+			],
+		}"
+	>
+		<template #body-content>
+			<FormControl v-model="email" :label="__('Email')" type="email" />
+		</template>
+	</Dialog>
 </template>
 <script setup>
 import {
@@ -381,6 +407,8 @@ import {
 	TextEditor,
 	FormControl,
 	toast,
+	Dropdown,
+	Dialog,
 } from 'frappe-ui'
 import { ref, watch, reactive, inject, computed } from 'vue'
 import { CheckCircle, XCircle, MinusCircle } from 'lucide-vue-next'
@@ -403,6 +431,8 @@ const answeredQuestions = reactive([])
 const allAnswered = computed(
 	() => answeredQuestions.length === questions.length,
 )
+const showEmailDialog = ref(false)
+const email = ref(user.data?.email || '')
 
 const props = defineProps({
 	quizName: {
@@ -551,6 +581,51 @@ const quizSubmission = createResource({
 		}
 	},
 })
+
+const openPrintView = () => {
+	window.open(
+		`/printview?doctype=LMS%20Quiz%20Submission&name=${quizSubmission.data.submission}`,
+		'_blank',
+	)
+}
+const downloadPdf = () => {
+	window.open(
+		`/api/method/frappe.utils.print_format.download_pdf?doctype=LMS+Quiz+Submission&name=${quizSubmission.data.submission}`,
+		'_blank',
+	)
+}
+const openEmailDialog = () => {
+	email.value = user.data?.email || ''
+	showEmailDialog.value = true
+}
+const emailResource = createResource({
+	url: 'lms.lms.api.send_quiz_submission_email',
+	makeParams(values) {
+		return {
+			submission: quizSubmission.data.submission,
+			recipient: values.email,
+		}
+	},
+})
+const sendEmail = (close) => {
+	emailResource.submit(
+		{ email: email.value },
+		{
+			onSuccess() {
+				toast.success(__('Email sent'))
+				close()
+			},
+			onError(err) {
+				toast.error(err.messages?.[0] || err)
+			},
+		},
+	)
+}
+const printOptions = [
+	{ label: __('Open Report'), onClick: openPrintView },
+	{ label: __('Download PDF'), onClick: downloadPdf },
+	{ label: __('Send Email'), onClick: openEmailDialog },
+]
 
 const questionDetails = createResource({
 	url: 'lms.lms.utils.get_question_details',

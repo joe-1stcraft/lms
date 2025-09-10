@@ -228,19 +228,21 @@ const students = createResource({
                         const quizzes = []
                         Object.keys(row.assessments).forEach((title) => {
                                 const info = row.assessments[title]
+                                const type = (info.type || '').toLowerCase()
                                 if (!info.submission) {
-                                        if (info.type?.includes('Assignment')) {
+                                        if (type.includes('assignment')) {
                                                 assignments.push(title)
-                                        } else if (info.type?.includes('Quiz')) {
+                                        } else if (type.includes('quiz')) {
+
                                                 quizzes.push(title)
                                         }
                                 }
                         })
                         const hasAssignments = Object.values(row.assessments).some((i) =>
-                                i.type?.includes('Assignment')
+                                (i.type || '').toLowerCase().includes('assignment')
                         )
                         const hasQuizzes = Object.values(row.assessments).some((i) =>
-                                i.type?.includes('Quiz')
+                                (i.type || '').toLowerCase().includes('quiz')
                         )
                         if (hasAssignments && assignments.length === 0) {
                                 row.assignments_todo = 'ส่งครบแล้ว'

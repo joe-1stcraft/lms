@@ -11,12 +11,12 @@
 				{{ __('Add') }}
 			</Button>
 		</div>
-		<div v-if="assessments.data?.length" class="text-sm">
-			<ListView
-				:columns="getAssessmentColumns()"
-				:rows="assessments.data"
-				row-key="name"
-				:options="{
+                <div v-if="assessments.data?.length" class="text-sm">
+                        <ListView
+                                :columns="getAssessmentColumns()"
+                                :rows="assessments.data"
+                                row-key="name"
+                                :options="{
 					showTooltip: false,
 					getRowRoute: (row) => getRowRoute(row),
 					selectable: user.data?.is_student ? false : true,
@@ -38,18 +38,33 @@
 				<ListRows>
 					<ListRow :row="row" v-for="row in assessments.data">
 						<template #default="{ column, item }">
-							<ListRowItem :item="row[column.key]" :align="column.align">
-								<div v-if="column.key == 'assessment_type'">
-									{{ getAssessmentTypeLabel(row[column.key]) }}
-								</div>
-								<div v-else-if="column.key == 'title'">
-									{{ row[column.key] }}
-								</div>
-								<div v-else-if="isNaN(row[column.key])">
-									<Badge :theme="getStatusTheme(row[column.key])">
-										{{ row[column.key] }}
-									</Badge>
-								</div>
+                                                        <ListRowItem :item="row[column.key]" :align="column.align">
+                                                                <div v-if="column.key == 'assessment_type'">
+                                                                        {{ getAssessmentTypeLabel(row[column.key]) }}
+                                                                </div>
+                                                                <div v-else-if="column.key == 'title'">
+                                                                        {{ row[column.key] }}
+                                                                </div>
+                                                                <div
+                                                                        v-else-if="
+                                                                                ['submitted_count', 'pending_feedback_count'].includes(
+                                                                                        column.key
+                                                                                )
+                                                                        "
+                                                                        class="text-center"
+                                                                >
+                                                                        <span
+                                                                                v-if="row.assessment_type == 'LMS Assignment'"
+                                                                        >
+                                                                                {{ row[column.key] ?? 0 }}
+                                                                        </span>
+                                                                        <span v-else>—</span>
+                                                                </div>
+                                                                <div v-else-if="isNaN(row[column.key])">
+                                                                        <Badge :theme="getStatusTheme(row[column.key])">
+                                                                                {{ row[column.key] }}
+                                                                        </Badge>
+                                                                </div>
 								<div v-else>
 									{{ row[column.key] }}
 								</div>
@@ -103,7 +118,7 @@ const showModal = ref(false)
 const readOnlyMode = window.read_only_mode
 
 const props = defineProps({
-	batch: {
+        batch: {
 		type: String,
 		required: true,
 	},
@@ -124,28 +139,32 @@ const props = defineProps({
 })
 
 const assessments = createResource({
-	url: 'lms.lms.utils.get_assessments',
-	params: {
-		batch: props.batch,
-	},
-	auto: true,
+        url: 'lms.lms.utils.get_assessments',
+        params: {
+                batch: props.batch,
+        },
+        auto: true,
 })
 
+const canReviewAssessments = () => {
+        return user.data?.is_moderator || user.data?.is_instructor || user.data?.is_evaluator
+}
+
 const deleteAssessments = createResource({
-	url: 'lms.lms.api.delete_documents',
-	makeParams(values) {
-		return {
-			doctype: 'LMS Assessment',
+        url: 'lms.lms.api.delete_documents',
+        makeParams(values) {
+                return {
+                        doctype: 'LMS Assessment',
 			documents: values.assessments,
 		}
 	},
 })
 
 const removeAssessments = (selections, unselectAll) => {
-	deleteAssessments.submit(
-		{ assessments: Array.from(selections) },
-		{
-			onSuccess(data) {
+        deleteAssessments.submit(
+                { assessments: Array.from(selections) },
+                {
+                        onSuccess(data) {
 				assessments.reload()
 				unselectAll()
 			},
@@ -154,11 +173,35 @@ const removeAssessments = (selections, unselectAll) => {
 }
 
 const getRowRoute = (row) => {
-	if (row.assessment_type == 'LMS Assignment') {
-		if (row.submission) {
-			return {
-				name: 'AssignmentSubmission',
-				params: {
+        if (canReviewAssessments()) {
+                if (row.assessment_type == 'LMS Assignment') {
+                        return {
+                                name: 'AssignmentSubmissionList',
+                                query: {
+                                        assignmentID: row.assessment_name,
+                                },
+                        }
+                } else if (row.assessment_type == 'LMS Quiz') {
+                        return {
+                                name: 'QuizSubmissionList',
+                                params: {
+                                        quizID: row.assessment_name,
+                                },
+                        }
+                } else if (row.assessment_type == 'LMS Programming Exercise') {
+                        return {
+                                name: 'ProgrammingExerciseSubmissions',
+                                query: {
+                                        exercise: row.assessment_name,
+                                },
+                        }
+                }
+        }
+        if (row.assessment_type == 'LMS Assignment') {
+                if (row.submission) {
+                        return {
+                                name: 'AssignmentSubmission',
+                                params: {
 					assignmentID: row.assessment_name,
 					submissionName: row.submission.name,
 				},
@@ -201,13 +244,13 @@ const getRowRoute = (row) => {
 }
 
 const canAddAssessments = () => {
-	if (readOnlyMode) return false
-	return user.data?.is_moderator || user.data?.is_evaluator
+        if (readOnlyMode) return false
+        return user.data?.is_moderator || user.data?.is_evaluator
 }
 
 const getAssessmentColumns = () => {
-	let columns = [
-		{
+        let columns = [
+                {
 			label: 'Assessment',
 			key: 'title',
 			width: '25rem',
@@ -216,18 +259,33 @@ const getAssessmentColumns = () => {
 			label: 'Type',
 			key: 'assessment_type',
 			width: '15rem',
-		},
-	]
+                },
+        ]
 
-	if (!user.data?.is_moderator) {
-		columns.push({
-			label: 'Status/Percentage',
-			key: 'status',
-			align: 'left',
-			width: '10rem',
-		})
-	}
-	return columns
+        if (canReviewAssessments()) {
+                columns.push(
+                        {
+                                label: __('Submitted'),
+                                key: 'submitted_count',
+                                width: '8rem',
+                                align: 'center',
+                        },
+                        {
+                                label: __('Not Graded'),
+                                key: 'pending_feedback_count',
+                                width: '10rem',
+                                align: 'center',
+                        }
+                )
+        } else {
+                columns.push({
+                        label: 'Status/Percentage',
+                        key: 'status',
+                        align: 'left',
+                        width: '10rem',
+                })
+        }
+        return columns
 }
 
 const getStatusTheme = (status) => {

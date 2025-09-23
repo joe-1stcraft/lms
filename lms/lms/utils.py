@@ -1464,26 +1464,86 @@ def get_batch_courses(batch):
 
 @frappe.whitelist()
 def get_assessments(batch, member=None):
-	if not member:
-		member = frappe.session.user
+        if member:
+                return _get_assessments_for_member(batch, member)
 
-	assessments = frappe.get_all(
-		"LMS Assessment",
-		{"parent": batch},
-		["name", "assessment_type", "assessment_name"],
-	)
+        roles = frappe.get_roles(frappe.session.user)
+        is_moderator = "Moderator" in roles
+        is_instructor = "Course Creator" in roles
+        is_evaluator = "Batch Evaluator" in roles
+        is_student = "LMS Student" in roles and not (is_moderator or is_instructor or is_evaluator)
 
-	for assessment in assessments:
-		if assessment.assessment_type == "LMS Assignment":
-			assessment = get_assignment_details(assessment, member)
+        if is_student:
+                return _get_assessments_for_member(batch, frappe.session.user)
 
-		elif assessment.assessment_type == "LMS Quiz":
-			assessment = get_quiz_details(assessment, member)
+        return _get_assessment_overview(batch)
 
-		elif assessment.assessment_type == "LMS Programming Exercise":
-			assessment = get_exercise_details(assessment, member)
 
-	return assessments
+def _get_assessments_for_member(batch, member):
+        assessments = frappe.get_all(
+                "LMS Assessment",
+                {"parent": batch},
+                ["name", "assessment_type", "assessment_name"],
+        )
+
+        for assessment in assessments:
+                if assessment.assessment_type == "LMS Assignment":
+                        assessment = get_assignment_details(assessment, member)
+
+                elif assessment.assessment_type == "LMS Quiz":
+                        assessment = get_quiz_details(assessment, member)
+
+                elif assessment.assessment_type == "LMS Programming Exercise":
+                        assessment = get_exercise_details(assessment, member)
+
+        return assessments
+
+
+def _get_assessment_overview(batch):
+        assessments = frappe.get_all(
+                "LMS Assessment",
+                {"parent": batch},
+                ["name", "assessment_type", "assessment_name"],
+        )
+
+        members = frappe.get_all(
+                "LMS Batch Enrollment", filters={"batch": batch}, pluck="member"
+        )
+        members = members or []
+
+        for assessment in assessments:
+                assessment.submitted_count = 0
+                assessment.pending_feedback_count = 0
+
+                if assessment.assessment_type == "LMS Assignment":
+                        assessment.title = frappe.db.get_value(
+                                "LMS Assignment", assessment.assessment_name, "title"
+                        )
+                        if members:
+                                filters = {
+                                        "assignment": assessment.assessment_name,
+                                        "member": ["in", members],
+                                }
+                                assessment.submitted_count = frappe.db.count(
+                                        "LMS Assignment Submission", filters
+                                )
+                                pending_filters = filters.copy()
+                                pending_filters["status"] = "Not Graded"
+                                assessment.pending_feedback_count = frappe.db.count(
+                                        "LMS Assignment Submission", pending_filters
+                                )
+                elif assessment.assessment_type == "LMS Quiz":
+                        assessment.title = frappe.db.get_value(
+                                "LMS Quiz", assessment.assessment_name, "title"
+                        )
+                elif assessment.assessment_type == "LMS Programming Exercise":
+                        assessment.title = frappe.db.get_value(
+                                "LMS Programming Exercise",
+                                assessment.assessment_name,
+                                "title",
+                        )
+
+        return assessments
 
 
 def get_assignment_details(assessment, member):

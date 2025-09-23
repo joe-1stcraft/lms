@@ -5,25 +5,17 @@
 				{{ __('Statistics') }}
 			</div>
 		</div>
-		<div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
-			<NumberChart
-				class="border rounded-md"
-				:config="{ title: __('Students'), value: students.data?.length || 0 }"
-			/>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-5 mb-8">
+                        <NumberChart
+                                class="border rounded-md"
+                                :config="{ title: __('Students'), value: students.data?.length || 0 }"
+                        />
 
-			<NumberChart
-				class="border rounded-md"
-				:config="{
-					title: __('Certified'),
-					value: certificationCount.data || 0,
-				}"
-			/>
-
-			<NumberChart
-				class="border rounded-md"
-				:config="{
-					title: __('Courses'),
-					value: batch.data.courses?.length || 0,
+                        <NumberChart
+                                class="border rounded-md"
+                                :config="{
+                                        title: __('Courses'),
+                                        value: batch.data.courses?.length || 0,
 				}"
 			/>
 
@@ -424,14 +416,4 @@ watch(students, () => {
 	}
 })
 
-const certificationCount = createResource({
-	url: 'frappe.client.get_count',
-	params: {
-		doctype: 'LMS Certificate',
-		filters: {
-			batch_name: props.batch?.data?.name,
-		},
-	},
-	auto: true,
-})
 </script>

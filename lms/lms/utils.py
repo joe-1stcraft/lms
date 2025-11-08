@@ -1396,87 +1396,86 @@ def get_batch_details(batch):
 
 
 def categorize_batches(batches):
-	upcoming, archived, private, enrolled = [], [], [], []
+    upcoming, archived, private, enrolled = [], [], [], []
 
-	for batch in batches:
-		if not batch.published:
-			private.append(batch)
-		elif getdate(batch.start_date) < getdate():
-			archived.append(batch)
-		elif getdate(batch.start_date) == getdate() and get_time_str(batch.start_time) < nowtime():
-			archived.append(batch)
-		else:
-			upcoming.append(batch)
+    for batch in batches:
+        if not batch.published:
+            private.append(batch)
+        elif getdate(batch.start_date) < getdate():
+            archived.append(batch)
+        elif getdate(batch.start_date) == getdate() and get_time_str(batch.start_time) < nowtime():
+            archived.append(batch)
+        else:
+            upcoming.append(batch)
 
-		if frappe.session.user != "Guest":
-			if frappe.db.exists("LMS Batch Enrollment", {"member": frappe.session.user, "batch": batch.name}):
-				enrolled.append(batch)
+        if frappe.session.user != "Guest":
+            if frappe.db.exists("LMS Batch Enrollment", {"member": frappe.session.user, "batch": batch.name}):
+                enrolled.append(batch)
 
-	categories = [archived, private, enrolled]
-	for category in categories:
-		category.sort(key=lambda x: x.start_date, reverse=True)
+    categories = [archived, private, enrolled]
+    for category in categories:
+        category.sort(key=lambda x: x.start_date, reverse=True)
 
-	upcoming.sort(key=lambda x: x.start_date)
-	return {
-		"upcoming": upcoming,
-		"archived": archived,
-		"private": private,
-		"enrolled": enrolled,
-	}
+    upcoming.sort(key=lambda x: x.start_date)
+    return {
+        "upcoming": upcoming,
+        "archived": archived,
+        "private": private,
+        "enrolled": enrolled,
+    }
 
 
 def get_country_code():
-	ip = frappe.local.request_ip
-	res = requests.get(f"http://ip-api.com/json/{ip}")
+    ip = frappe.local.request_ip
+    res = requests.get(f"http://ip-api.com/json/{ip}")
 
-	try:
-		data = res.json()
-		if data.get("status") != "fail":
-			return frappe.db.get_value("Country", {"code": data.get("countryCode")}, "name")
-	except Exception:
-		pass
-	return
+    try:
+        data = res.json()
+        if data.get("status") != "fail":
+            return frappe.db.get_value("Country", {"code": data.get("countryCode")}, "name")
+    except Exception:
+        pass
+    return
 
 
 @frappe.whitelist()
 def get_question_details(question):
-        fields = ["question", "type", "multiple"]
-        for i in range(1, 6):
-                fields.append(f"option_{i}")
-                fields.append(f"explanation_{i}")
-
-	question_details = frappe.db.get_value("LMS Question", question, fields, as_dict=1)
-	return question_details
+    fields = ["question", "type", "multiple"]
+    for i in range(1, 6):
+        fields.append(f"option_{i}")
+        fields.append(f"explanation_{i}")
+    question_details = frappe.db.get_value("LMS Question", question, fields, as_dict=1)
+    return question_details
 
 
 @frappe.whitelist(allow_guest=True)
 def get_batch_courses(batch):
-	courses = []
-	course_list = frappe.get_all("Batch Course", {"parent": batch}, ["name", "course"])
+    courses = []
+    course_list = frappe.get_all("Batch Course", {"parent": batch}, ["name", "course"])
 
-	for course in course_list:
-		details = get_course_details(course.course)
-		details.batch_course = course.name
-		courses.append(details)
+    for course in course_list:
+        details = get_course_details(course.course)
+        details.batch_course = course.name
+        courses.append(details)
 
-	return courses
+    return courses
 
 
 @frappe.whitelist()
 def get_assessments(batch, member=None):
-        if member:
-                return _get_assessments_for_member(batch, member)
+    if member:
+        return _get_assessments_for_member(batch, member)
 
-        roles = frappe.get_roles(frappe.session.user)
-        is_moderator = "Moderator" in roles
-        is_instructor = "Course Creator" in roles
-        is_evaluator = "Batch Evaluator" in roles
-        is_student = "LMS Student" in roles and not (is_moderator or is_instructor or is_evaluator)
+    roles = frappe.get_roles(frappe.session.user)
+    is_moderator = "Moderator" in roles
+    is_instructor = "Course Creator" in roles
+    is_evaluator = "Batch Evaluator" in roles
+    is_student = "LMS Student" in roles and not (is_moderator or is_instructor or is_evaluator)
 
-        if is_student:
-                return _get_assessments_for_member(batch, frappe.session.user)
+    if is_student:
+        return _get_assessments_for_member(batch, frappe.session.user)
 
-        return _get_assessment_overview(batch)
+    return _get_assessment_overview(batch)
 
 
 def _get_assessments_for_member(batch, member):

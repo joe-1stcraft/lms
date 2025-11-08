@@ -249,74 +249,73 @@ def get_corrupted_image_msg():
 
 
 def create_submission(quiz, results, score_out_of, passing_percentage, time_taken=None):
-	submission = frappe.new_doc("LMS Quiz Submission")
-	# Score and percentage are calculated by the controller function
-	submission.update(
-		{
-			"doctype": "LMS Quiz Submission",
-			"quiz": quiz,
-			"result": results,
-			"score": 0,
-			"score_out_of": score_out_of,
-			"member": frappe.session.user,
-			"percentage": 0,
-			"passing_percentage": passing_percentage,
-			"time_taken": time_taken,
-		}
-	)
-	submission.save(ignore_permissions=True)
-	return submission
+    submission = frappe.new_doc("LMS Quiz Submission")
+    # Score and percentage are calculated by the controller function
+    submission.update(
+        {
+            "doctype": "LMS Quiz Submission",
+            "quiz": quiz,
+            "result": results,
+            "score": 0,
+            "score_out_of": score_out_of,
+            "member": frappe.session.user,
+            "percentage": 0,
+            "passing_percentage": passing_percentage,
+            "time_taken": time_taken,
+        }
+    )
+    submission.save(ignore_permissions=True)
+    return submission
 
 def save_progress_after_quiz(quiz_details, percentage):
-	if percentage >= quiz_details.passing_percentage and quiz_details.lesson and quiz_details.course:
-		save_progress(quiz_details.lesson, quiz_details.course)
-	elif not quiz_details.passing_percentage:
-		save_progress(quiz_details.lesson, quiz_details.course)
+    if percentage >= quiz_details.passing_percentage and quiz_details.lesson and quiz_details.course:
+        save_progress(quiz_details.lesson, quiz_details.course)
+    elif not quiz_details.passing_percentage:
+        save_progress(quiz_details.lesson, quiz_details.course)
 
 
 @frappe.whitelist()
 def get_question_details(question):
-        if frappe.db.exists("LMS Quiz Question", question):
-                fields = ["name", "question", "type"]
-                for num in range(1, 6):
-                        fields.append(f"option_{cstr(num)}")
-                        fields.append(f"is_correct_{cstr(num)}")
-                        fields.append(f"explanation_{cstr(num)}")
+    if frappe.db.exists("LMS Quiz Question", question):
+        fields = ["name", "question", "type"]
+        for num in range(1, 6):
+            fields.append(f"option_{cstr(num)}")
+            fields.append(f"is_correct_{cstr(num)}")
+            fields.append(f"explanation_{cstr(num)}")
+        for num in range(1, 5):
+            fields.append(f"possibility_{cstr(num)}")
 
-                for num in range(1, 5):
-                        fields.append(f"possibility_{cstr(num)}")
-
-		return frappe.db.get_value("LMS Quiz Question", question, fields, as_dict=1)
-	return
+        return frappe.db.get_value("LMS Quiz Question", question, fields, as_dict=1)
+    return
 
 
 @frappe.whitelist()
 def check_answer(question, type, answers):
-	answers = json.loads(answers)
-	if type == "Choices":
-		return check_choice_answers(question, answers)
-	else:
-		return check_input_answers(question, answers[0])
+    answers = json.loads(answers)
+    if type == "Choices":
+        return check_choice_answers(question, answers)
+    else:
+        return check_input_answers(question, answers[0])
 
 
 def check_choice_answers(question, answers):
-        fields = ["multiple"]
-        is_correct = []
-        for num in range(1, 6):
-                fields.append(f"option_{cstr(num)}")
-                fields.append(f"is_correct_{cstr(num)}")
+    fields = ["multiple"]
+    is_correct = []
+    for num in range(1, 6):
+        fields.append(f"option_{cstr(num)}")
+        fields.append(f"is_correct_{cstr(num)}")
 
-        question_details = frappe.db.get_value("LMS Question", question, fields, as_dict=1)
+    question_details = frappe.db.get_value("LMS Question", question, fields, as_dict=1)
 
-        for num in range(1, 6):
-                if question_details[f"option_{num}"] in answers:
-                        is_correct.append(question_details[f"is_correct_{num}"])
-                elif question_details[f"is_correct_{num}"]:
-			is_correct.append(2)
-		else:
-			is_correct.append(0)
+    for num in range(1, 6):
+        if question_details[f"option_{num}"] in answers:
+            is_correct.append(question_details[f"is_correct_{num}"])
+        elif question_details[f"is_correct_{num}"]:
+            is_correct.append(2)
+        else:
+            is_correct.append(0)
 
-	return is_correct
+    return is_correct
 
 
 def check_input_answers(question, answer):

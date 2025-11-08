@@ -61,11 +61,11 @@
 					>
 						{{ __('Possibilities') }}
 					</div>
-					<div
-						v-if="question.type == 'Choices'"
-						class="grid grid-cols-2 gap-x-8 gap-y-4"
-					>
-						<div v-for="n in 4" class="space-y-4 py-2">
+                                        <div
+                                                v-if="question.type == 'Choices'"
+                                                class="grid grid-cols-2 gap-x-8 gap-y-4"
+                                        >
+                                                <div v-for="n in 5" class="space-y-4 py-2">
 							<FormControl
 								:label="__('Option') + ' ' + n"
 								v-model="question[`option_${n}`]"
@@ -148,14 +148,23 @@ const question = reactive({
 })
 
 const populateFields = () => {
-	let fields = ['option', 'is_correct', 'explanation', 'possibility']
-	let counter = 1
-	fields.forEach((field) => {
-		while (counter <= 4) {
-			question[`${field}_${counter}`] = field === 'is_correct' ? false : null
-			counter++
-		}
-	})
+        const choiceFields = ['option', 'explanation']
+        const choiceFieldCount = 5
+        const possibilityCount = 4
+
+        choiceFields.forEach((field) => {
+                for (let counter = 1; counter <= choiceFieldCount; counter++) {
+                        question[`${field}_${counter}`] = null
+                }
+        })
+
+        for (let counter = 1; counter <= choiceFieldCount; counter++) {
+                question[`is_correct_${counter}`] = false
+        }
+
+        for (let counter = 1; counter <= possibilityCount; counter++) {
+                question[`possibility_${counter}`] = null
+        }
 }
 
 populateFields()
@@ -181,17 +190,13 @@ const questionData = createResource({
 	},
 	auto: false,
 	onSuccess(data) {
-		let counter = 1
-		editMode.value = true
-		Object.keys(data).forEach((key) => {
-			if (Object.hasOwn(question, key)) question[key] = data[key]
-		})
-		while (counter <= 4) {
-			question[`is_correct_${counter}`] = data[`is_correct_${counter}`]
-				? true
-				: false
-			counter++
-		}
+                editMode.value = true
+                Object.keys(data).forEach((key) => {
+                        if (Object.hasOwn(question, key)) question[key] = data[key]
+                })
+                for (let counter = 1; counter <= 5; counter++) {
+                        question[`is_correct_${counter}`] = data[`is_correct_${counter}`] ? true : false
+                }
 		question.marks = props.questionDetail.marks
 	},
 })

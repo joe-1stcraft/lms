@@ -65,7 +65,11 @@
                                                 v-if="question.type == 'Choices'"
                                                 class="grid grid-cols-2 gap-x-8 gap-y-4"
                                         >
-                                                <div v-for="n in 5" class="space-y-4 py-2">
+                                                <div
+                                                        v-for="n in choiceIndexes"
+                                                        :key="`choice-${n}`"
+                                                        class="space-y-4 py-2"
+                                                >
 							<FormControl
 								:label="__('Option') + ' ' + n"
 								v-model="question[`option_${n}`]"
@@ -82,11 +86,11 @@
 							/>
 						</div>
 					</div>
-					<div
-						v-else-if="question.type == 'User Input'"
-						class="grid grid-cols-2 gap-x-8 gap-y-4 py-2"
-					>
-						<div v-for="n in 4">
+                                        <div
+                                                v-else-if="question.type == 'User Input'"
+                                                class="grid grid-cols-2 gap-x-8 gap-y-4 py-2"
+                                        >
+                                                <div v-for="n in possibilityIndexes" :key="`possibility-${n}`">
 							<FormControl
 								:label="__('Possibility') + ' ' + n"
 								v-model="question[`possibility_${n}`]"
@@ -141,30 +145,40 @@ const existingQuestion = reactive({
 	question: '',
 	marks: 1,
 })
+const CHOICE_FIELD_COUNT = 5
+const POSSIBILITY_COUNT = 4
+
+const choiceIndexes = computed(() =>
+        Array.from({ length: CHOICE_FIELD_COUNT }, (_, idx) => idx + 1),
+)
+const possibilityIndexes = computed(() =>
+        Array.from({ length: POSSIBILITY_COUNT }, (_, idx) => idx + 1),
+)
+
 const question = reactive({
-	question: '',
-	type: 'Choices',
-	marks: 1,
+        question: '',
+        type: 'Choices',
+        marks: 1,
+        multiple: 0,
 })
 
 const populateFields = () => {
         const choiceFields = ['option', 'explanation']
-        const choiceFieldCount = 5
-        const possibilityCount = 4
 
         choiceFields.forEach((field) => {
-                for (let counter = 1; counter <= choiceFieldCount; counter++) {
+                choiceIndexes.value.forEach((counter) => {
                         question[`${field}_${counter}`] = null
-                }
+                })
         })
 
-        for (let counter = 1; counter <= choiceFieldCount; counter++) {
+        choiceIndexes.value.forEach((counter) => {
                 question[`is_correct_${counter}`] = false
-        }
+        })
 
-        for (let counter = 1; counter <= possibilityCount; counter++) {
+        possibilityIndexes.value.forEach((counter) => {
                 question[`possibility_${counter}`] = null
-        }
+        })
+        question.multiple = 0
 }
 
 populateFields()
@@ -189,15 +203,15 @@ const questionData = createResource({
 		}
 	},
 	auto: false,
-	onSuccess(data) {
+        onSuccess(data) {
                 editMode.value = true
                 Object.keys(data).forEach((key) => {
                         if (Object.hasOwn(question, key)) question[key] = data[key]
                 })
-                for (let counter = 1; counter <= 5; counter++) {
+                choiceIndexes.value.forEach((counter) => {
                         question[`is_correct_${counter}`] = data[`is_correct_${counter}`] ? true : false
-                }
-		question.marks = props.questionDetail.marks
+                })
+                question.marks = props.questionDetail.marks
 	},
 })
 
@@ -208,11 +222,12 @@ watch(show, () => {
 		else {
 			question.question = ''
 			question.marks = 1
-			question.type = 'Choices'
-			existingQuestion.question = ''
-			existingQuestion.marks = 1
-			chooseFromExisting.value = false
-			populateFields()
+                        question.type = 'Choices'
+                        question.multiple = 0
+                        existingQuestion.question = ''
+                        existingQuestion.marks = 1
+                        chooseFromExisting.value = false
+                        populateFields()
 		}
 
 		if (props.questionDetail.marks) question.marks = props.questionDetail.marks
@@ -234,16 +249,32 @@ const questionRow = createResource({
 	},
 })
 
+const normalizeQuestionPayload = () => {
+        const payload = {}
+        Object.keys(question).forEach((key) => {
+                payload[key] = question[key]
+        })
+
+        choiceIndexes.value.forEach((counter) => {
+                const field = `is_correct_${counter}`
+                payload[field] = payload[field] ? 1 : 0
+        })
+
+        payload.multiple = payload.multiple ? 1 : 0
+
+        return payload
+}
+
 const questionCreation = createResource({
-	url: 'frappe.client.insert',
-	makeParams(values) {
-		return {
-			doc: {
-				doctype: 'LMS Question',
-				...question,
-			},
-		}
-	},
+        url: 'frappe.client.insert',
+        makeParams(values) {
+                return {
+                        doc: {
+                                doctype: 'LMS Question',
+                                ...normalizeQuestionPayload(),
+                        },
+                }
+        },
 })
 
 const submitQuestion = () => {
@@ -299,17 +330,17 @@ const addQuestionRow = (question) => {
 }
 
 const questionUpdate = createResource({
-	url: 'frappe.client.set_value',
-	auto: false,
-	makeParams(values) {
-		return {
-			doctype: 'LMS Question',
-			name: questionData.data?.name,
-			fieldname: {
-				...question,
-			},
-		}
-	},
+        url: 'frappe.client.set_value',
+        auto: false,
+        makeParams(values) {
+                return {
+                        doctype: 'LMS Question',
+                        name: questionData.data?.name,
+                        fieldname: {
+                                ...normalizeQuestionPayload(),
+                        },
+                }
+        },
 })
 
 const marksUpdate = createResource({

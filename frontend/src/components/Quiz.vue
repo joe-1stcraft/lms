@@ -150,7 +150,10 @@
 						class="text-ink-gray-9 font-semibold mt-2 leading-5"
 						v-html="questionDetails.data.question"
 					></div>
-					<div v-if="questionDetails.data.type == 'Choices'" v-for="index in 4">
+                                        <div
+                                                v-if="questionDetails.data.type == 'Choices'"
+                                                v-for="index in SELECTION_SIZE"
+                                        >
 						<label
 							v-if="questionDetails.data[`option_${index}`]"
 							class="flex items-center bg-surface-gray-3 rounded-md p-3 mt-4 w-full cursor-pointer focus:border-blue-600"
@@ -418,7 +421,12 @@ import ProgressBar from '@/components/ProgressBar.vue'
 const user = inject('$user')
 const activeQuestion = ref(0)
 const currentQuestion = ref('')
-const selectedOptions = reactive([0, 0, 0, 0])
+const SELECTION_SIZE = 5
+const selectedOptions = reactive(Array(SELECTION_SIZE).fill(0))
+const resetSelectedOptions = (values = []) => {
+        const next = Array.from({ length: SELECTION_SIZE }, (_, idx) => values[idx] || 0)
+        selectedOptions.splice(0, selectedOptions.length, ...next)
+}
 const showAnswers = reactive([])
 let questions = reactive([])
 const possibleAnswer = ref(null)
@@ -660,11 +668,11 @@ watch(
 )
 
 const startQuiz = () => {
-	localStorage.removeItem(quiz.data.title)
-	activeQuestion.value = 1
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	showAnswers.length = 0
-	possibleAnswer.value = null
+        localStorage.removeItem(quiz.data.title)
+        activeQuestion.value = 1
+        resetSelectedOptions()
+        showAnswers.length = 0
+        possibleAnswer.value = null
 
 	startTime = Date.now()
 	if (quiz.data.duration) startTimer()
@@ -673,11 +681,10 @@ const startQuiz = () => {
 }
 
 const markAnswer = (index) => {
-	if (!questionDetails.data.multiple)
-		selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	selectedOptions[index - 1] = selectedOptions[index - 1] ? 0 : 1
-	if (selectedOptions.some((opt) => opt)) {
-		removeFromSkipped(activeQuestion.value)
+        if (!questionDetails.data.multiple) resetSelectedOptions()
+        selectedOptions[index - 1] = selectedOptions[index - 1] ? 0 : 1
+        if (selectedOptions.some((opt) => opt)) {
+                removeFromSkipped(activeQuestion.value)
 		if (!answeredQuestions.includes(activeQuestion.value))
 			answeredQuestions.push(activeQuestion.value)
 	} else {
@@ -705,17 +712,17 @@ const getAnswers = () => {
 
 const loadSavedAnswer = () => {
 	const quizData = JSON.parse(localStorage.getItem(quiz.data.title))
-	if (!quizData) return
-	const saved = quizData[activeQuestion.value - 1]
-	if (!saved) return
-	if (saved.type == 'Choices' && saved.selected) {
-		selectedOptions.splice(0, selectedOptions.length, ...saved.selected)
-		if (saved.selected.some((opt) => opt))
-			answeredQuestions.push(activeQuestion.value)
-	} else if (saved.type == 'User Input') {
-		possibleAnswer.value = saved.answer
-		if (saved.answer) answeredQuestions.push(activeQuestion.value)
-	}
+        if (!quizData) return
+        const saved = quizData[activeQuestion.value - 1]
+        if (!saved) return
+        if (saved.type == 'Choices' && Array.isArray(saved.selected)) {
+                resetSelectedOptions(saved.selected)
+                if (saved.selected.some((opt) => opt))
+                        answeredQuestions.push(activeQuestion.value)
+        } else if (saved.type == 'User Input') {
+                possibleAnswer.value = saved.answer
+                if (saved.answer) answeredQuestions.push(activeQuestion.value)
+        }
 }
 
 const removeFromSkipped = (num) => {
@@ -724,11 +731,11 @@ const removeFromSkipped = (num) => {
 }
 
 const loadQuestion = (num) => {
-	activeQuestion.value = num
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	showAnswers.length = 0
-	possibleAnswer.value = null
-	loadSavedAnswer()
+        activeQuestion.value = num
+        resetSelectedOptions()
+        showAnswers.length = 0
+        possibleAnswer.value = null
+        loadSavedAnswer()
 }
 
 const skipQuestion = () => {
@@ -869,11 +876,11 @@ const createSubmission = () => {
 }
 
 const resetQuiz = () => {
-	localStorage.removeItem(quiz.data.title)
-	activeQuestion.value = 0
-	selectedOptions.splice(0, selectedOptions.length, ...[0, 0, 0, 0])
-	showAnswers.length = 0
-	possibleAnswer.value = null
+        localStorage.removeItem(quiz.data.title)
+        activeQuestion.value = 0
+        resetSelectedOptions()
+        showAnswers.length = 0
+        possibleAnswer.value = null
 	quizSubmission.reset()
 	populateQuestions()
 	setupTimer()

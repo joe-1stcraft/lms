@@ -130,7 +130,7 @@ import {
 	Button,
 	toast,
 } from 'frappe-ui'
-import { computed, watch, reactive, ref, inject } from 'vue'
+import { watch, reactive, ref, inject } from 'vue'
 import Link from '@/components/Controls/Link.vue'
 import { useOnboarding } from 'frappe-ui/frappe'
 
@@ -145,15 +145,8 @@ const existingQuestion = reactive({
 	question: '',
 	marks: 1,
 })
-const CHOICE_FIELD_COUNT = 5
-const POSSIBILITY_COUNT = 4
-
-const choiceIndexes = computed(() =>
-        Array.from({ length: CHOICE_FIELD_COUNT }, (_, idx) => idx + 1),
-)
-const possibilityIndexes = computed(() =>
-        Array.from({ length: POSSIBILITY_COUNT }, (_, idx) => idx + 1),
-)
+const choiceIndexes = [1, 2, 3, 4, 5]
+const possibilityIndexes = [1, 2, 3, 4]
 
 const question = reactive({
         question: '',
@@ -166,16 +159,16 @@ const populateFields = () => {
         const choiceFields = ['option', 'explanation']
 
         choiceFields.forEach((field) => {
-                choiceIndexes.value.forEach((counter) => {
+                choiceIndexes.forEach((counter) => {
                         question[`${field}_${counter}`] = null
                 })
         })
 
-        choiceIndexes.value.forEach((counter) => {
+        choiceIndexes.forEach((counter) => {
                 question[`is_correct_${counter}`] = false
         })
 
-        possibilityIndexes.value.forEach((counter) => {
+        possibilityIndexes.forEach((counter) => {
                 question[`possibility_${counter}`] = null
         })
         question.multiple = 0
@@ -208,7 +201,7 @@ const questionData = createResource({
                 Object.keys(data).forEach((key) => {
                         if (Object.hasOwn(question, key)) question[key] = data[key]
                 })
-                choiceIndexes.value.forEach((counter) => {
+                choiceIndexes.forEach((counter) => {
                         question[`is_correct_${counter}`] = data[`is_correct_${counter}`] ? true : false
                 })
                 question.marks = props.questionDetail.marks
@@ -255,7 +248,7 @@ const normalizeQuestionPayload = () => {
                 payload[key] = question[key]
         })
 
-        choiceIndexes.value.forEach((counter) => {
+        choiceIndexes.forEach((counter) => {
                 const field = `is_correct_${counter}`
                 payload[field] = payload[field] ? 1 : 0
         })

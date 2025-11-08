@@ -282,7 +282,6 @@ def get_question_details(question):
             fields.append(f"option_{cstr(num)}")
             fields.append(f"is_correct_{cstr(num)}")
             fields.append(f"explanation_{cstr(num)}")
-
         for num in range(1, 5):
             fields.append(f"possibility_{cstr(num)}")
 

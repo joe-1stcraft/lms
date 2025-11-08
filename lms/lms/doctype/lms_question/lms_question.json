@@ -32,6 +32,11 @@
   "is_correct_4",
   "column_break_lknb",
   "explanation_4",
+  "section_break_kdho",
+  "option_5",
+  "is_correct_5",
+  "column_break_uzhw",
+  "explanation_5",
   "section_break_hkfe",
   "possibility_1",
   "possibility_3",
@@ -152,6 +157,31 @@
   },
   {
    "fieldname": "explanation_4",
+   "fieldtype": "Small Text",
+   "label": "Explanation"
+  },
+  {
+   "depends_on": "eval:doc.type == 'Choices'",
+   "fieldname": "section_break_kdho",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "option_5",
+   "fieldtype": "Small Text",
+   "label": "Option 5"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_correct_5",
+   "fieldtype": "Check",
+   "label": "Is Correct"
+  },
+  {
+   "fieldname": "column_break_uzhw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "explanation_5",
    "fieldtype": "Small Text",
    "label": "Explanation"
   },

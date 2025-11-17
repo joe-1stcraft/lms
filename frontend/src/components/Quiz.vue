@@ -269,19 +269,18 @@
 							>
 								<span>{{ __('Next') }}</span>
 							</Button>
-							<Button
-								v-if="
-									!showCheckButton &&
-									(allAnswered || activeQuestion == questions.length)
-								"
-								:disabled="skippedQuestions.length"
-								@click="submitQuiz()"
-							>
-								<span>{{ __('Submit') }}</span>
-							</Button>
-						</div>
-					</div>
-				</div>
+                                                        <Button
+                                                                v-if="
+                                                                        !showCheckButton &&
+                                                                        (allAnswered || activeQuestion == questions.length)
+                                                                "
+                                                                @click="submitQuiz()"
+                                                        >
+                                                                <span>{{ __('Submit') }}</span>
+                                                        </Button>
+                                                </div>
+                                        </div>
+                                </div>
 			</div>
 		</div>
 		<div v-else class="border rounded-md p-20 text-center space-y-2">
@@ -382,23 +381,64 @@
 			</ListView>
 		</div>
 	</div>
-	<Dialog
-		v-model="showEmailDialog"
-		:options="{
-			title: __('Send Email'),
-			actions: [
-				{
-					label: __('Send'),
-					variant: 'solid',
-					onClick: (close) => sendEmail(close),
-				},
-			],
-		}"
-	>
-		<template #body-content>
-			<FormControl v-model="email" :label="__('Email')" type="email" />
-		</template>
-	</Dialog>
+        <Dialog
+                v-model="showEmailDialog"
+                :options="{
+                        title: __('Send Email'),
+                        actions: [
+                                {
+                                        label: __('Send'),
+                                        variant: 'solid',
+                                        onClick: (close) => sendEmail(close),
+                                },
+                        ],
+                }"
+        >
+                <template #body-content>
+                        <FormControl v-model="email" :label="__('Email')" type="email" />
+                </template>
+        </Dialog>
+        <Dialog
+                v-model="showSubmitConfirm"
+                :options="{
+                        title: __('Submit Quiz?'),
+                        actions: [
+                                {
+                                        label: __('Go Back'),
+                                        variant: 'subtle',
+                                        onClick: (close) => close(),
+                                },
+                                {
+                                        label: __('Submit'),
+                                        variant: 'solid',
+                                        onClick: (close) => confirmSubmitQuiz(close),
+                                },
+                        ],
+                }"
+        >
+                <template #body-content>
+                        <div class="space-y-3 text-sm text-ink-gray-9">
+                                <p>
+                                        {{ __('Are you sure you want to submit your answers?') }}
+                                </p>
+                                <div v-if="pendingQuestions.length">
+                                        <p>{{ __('You have not answered the following questions:') }}</p>
+                                        <div class="flex flex-wrap gap-2 mt-2">
+                                                <span
+                                                        v-for="question in pendingQuestions"
+                                                        :key="question"
+                                                        class="w-8 h-8 rounded-full bg-surface-gray-3 border border-ink-red-3 flex items-center justify-center font-semibold"
+                                                >
+                                                        {{ question }}
+                                                </span>
+                                        </div>
+                                </div>
+                                <div v-else>
+                                        <p>{{ __('All questions have been answered.') }}</p>
+                                </div>
+                        </div>
+                </template>
+        </Dialog>
 </template>
 <script setup>
 import {
@@ -441,6 +481,8 @@ const allAnswered = computed(
 )
 const showEmailDialog = ref(false)
 const email = ref(user.data?.email || '')
+const showSubmitConfirm = ref(false)
+const pendingQuestions = ref([])
 
 const props = defineProps({
 	quizName: {
@@ -495,13 +537,13 @@ const setupTimer = () => {
 }
 
 const startTimer = () => {
-	timerInterval = setInterval(() => {
-		timer.value--
-		if (timer.value == 0) {
-			clearInterval(timerInterval)
-			submitQuiz()
-		}
-	}, 1000)
+        timerInterval = setInterval(() => {
+                timer.value--
+                if (timer.value == 0) {
+                        clearInterval(timerInterval)
+                        forceSubmitQuiz()
+                }
+        }, 1000)
 }
 
 const formatTimer = (seconds) => {
@@ -835,20 +877,43 @@ const resetQuestion = () => {
 }
 
 const submitQuiz = () => {
-	if (skippedQuestions.length) {
-		toast.warning(__('Please answer all skipped questions'))
-		return
-	}
-	if (questionDetails.data.type == 'Open Ended') {
-		addToLocalStorage()
-		createSubmission()
-		return
-	}
+        pendingQuestions.value = findUnansweredQuestions()
+        showSubmitConfirm.value = true
+}
+
+const confirmSubmitQuiz = (close) => {
+        finalizeSubmission()
+        if (close) close()
+}
+
+const forceSubmitQuiz = () => {
+        showSubmitConfirm.value = false
+        pendingQuestions.value = []
+        finalizeSubmission()
+}
+
+const finalizeSubmission = () => {
+        if (questionDetails.data.type == 'Open Ended') {
+                addToLocalStorage()
+                createSubmission()
+                return
+        }
 	if (getAnswers().length) {
 		checkAnswer(() => createSubmission())
 	} else {
 		createSubmission()
 	}
+}
+
+const findUnansweredQuestions = () => {
+        const answeredSet = new Set(answeredQuestions)
+        const pending = []
+        for (let i = 1; i <= questions.length; i++) {
+                if (!answeredSet.has(i)) {
+                        pending.push(i)
+                }
+        }
+        return pending
 }
 
 const createSubmission = () => {
@@ -881,13 +946,15 @@ const resetQuiz = () => {
         resetSelectedOptions()
         showAnswers.length = 0
         possibleAnswer.value = null
-	quizSubmission.reset()
-	populateQuestions()
-	setupTimer()
-	startTime = null
-	timeTaken.value = 0
-	skippedQuestions.length = 0
-	answeredQuestions.length = 0
+        quizSubmission.reset()
+        populateQuestions()
+        setupTimer()
+        startTime = null
+        timeTaken.value = 0
+        skippedQuestions.length = 0
+        answeredQuestions.length = 0
+        showSubmitConfirm.value = false
+        pendingQuestions.value = []
 }
 
 const getInstructions = (question) => {
